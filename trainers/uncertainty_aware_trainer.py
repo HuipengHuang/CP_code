@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from overrides import overrides
 from .trainer import Trainer
-from common import utils
+from datasets import utils
 
 
 class UncertaintyAwareTrainer(Trainer):
@@ -25,7 +25,7 @@ class UncertaintyAwareTrainer(Trainer):
                 pred_loader = DataLoader(pred_set, batch_size=self.batch_size, shuffle=True, drop_last=True)
                 calibrate_loader = DataLoader(calibrate_set, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
-                for pred_batch, cal_batch in tqdm(zip(pred_loader, calibrate_loader)):
+                for pred_batch, cal_batch in tqdm(zip(pred_loader, calibrate_loader), desc=f"Epoch:{epoch+1} / {epochs}"):
                     pred_data, pred_target = pred_batch
                     cal_data, cal_target = cal_batch
 
@@ -35,7 +35,7 @@ class UncertaintyAwareTrainer(Trainer):
                 pred_loader = DataLoader(pred_set, batch_size=self.batch_size, shuffle=True, drop_last=True)
                 calibrate_loader = DataLoader(calibrate_set, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
-                for pred_batch, cal_batch in tqdm(zip(pred_loader, calibrate_loader)):
+                for pred_batch, cal_batch in tqdm(zip(pred_loader, calibrate_loader), desc=f"Epoch:{epoch+1} / {epochs}"):
                     pred_data, pred_target = pred_batch
                     cal_data, cal_target = cal_batch
 

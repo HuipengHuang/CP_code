@@ -33,10 +33,9 @@ class ConftrLoss(BaseLoss):
         pred_logit, cal_logit = shuffled_logit[:pred_size], shuffled_logit[pred_size:]
         pred_target, cal_target = shuffled_target[:pred_size], shuffled_target[pred_size:]
 
-        threshold = self.predictor.calibrate_batch_logit(cal_logit, cal_target, self.alpha)
-        pred_prob = torch.softmax(pred_logit, dim=-1)
-        pred_score = self.predictor.score_function(pred_prob)
-
+        threshold = self.predictor.smooth_calibrate_batch_logit(cal_logit, cal_target, self.alpha)
+        pred_prob = self.predictor.final_activation_function(pred_logit)
+        pred_score = self.predictor.score(pred_prob)
         smooth_pred = torch.sigmoid((threshold - pred_score) / self.T)
 
         size_loss = self.compute_size_loss(smooth_pred)
@@ -52,7 +51,6 @@ class ConftrLoss(BaseLoss):
     def compute_classification_loss(self, smooth_pred, target):
         one_hot_labels = F.one_hot(target, num_classes=smooth_pred.shape[1]).float()
         loss_matrix = torch.eye(smooth_pred.shape[1], device=smooth_pred.device)
-
         l1 = (1 - smooth_pred) * one_hot_labels * loss_matrix[target]
         l2 = smooth_pred * (1 - one_hot_labels) * loss_matrix[target]
 

@@ -1,15 +1,28 @@
 import torch
 import torch.nn as nn
+from overrides import overrides
 
 
 class Adapter(nn.Module):
-    def __init__(self, num_classes, device):
-        super(Adapter, self).__init__()
+    def __init__(self, input_dim, num_classes, device):
+        super().__init__()
         self.num_classes = num_classes
-        self.adapter_net = nn.Sequential(nn.Linear(in_features=num_classes, out_features=128, bias=True, device=device),
+        self.adapter_net = nn.Sequential(nn.Linear(in_features=input_dim, out_features=128, bias=True, device=device),
                                         nn.ReLU(),
+                                         nn.Linear(in_features=128, out_features=128, bias=True, device=device),
+                                         nn.ReLU(),
                                         nn.Linear(in_features=128, out_features=num_classes, bias=True, device=device))
 
+    def forward(self, logits):
+        return self.adapter_net(logits)
+
+
+
+class CAdapter(Adapter):
+    def __init__(self, input_dim, num_classes, device):
+        super(CAdapter, self).__init__(input_dim, num_classes, device)
+
+    @overrides
     def forward(self, logits):
         prob = torch.softmax(logits, dim=-1)
         U = torch.triu(torch.ones(self.num_classes, self.num_classes).to(logits.device))
