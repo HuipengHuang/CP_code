@@ -18,12 +18,12 @@ class MnistBags(Dataset):
             num_bag: Number of bags
             train: Get train data or test data.
         """
-    def __init__(self, mean_bag_length=10, var_bag_length=0, num_bag=50, train=True):
+    def __init__(self, device, mean_bag_length=10, var_bag_length=2, num_bag=50, train=True):
         self.mean_bag_length = mean_bag_length
         self.var_bag_length = var_bag_length
         self.num_bag = num_bag
         self.train = train
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device
 
         self.num_in_train = 60000
         self.num_in_test = 10000
