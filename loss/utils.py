@@ -1,4 +1,4 @@
-from .attention_mil_loss import AttentionMilLoss
+from .bce_loss import BinaryCrossEntropyLoss
 from .contr_loss import ConftrLoss
 from .uncertainty_aware_loss import UncertaintyAwareLoss
 from .cadapter_loss import CAdapterLoss
@@ -19,7 +19,7 @@ def get_loss_function(args, predictor):
         return UncertaintyAwareLoss(args, predictor)
     elif args.loss == "cadapter":
         return CAdapterLoss(args, predictor)
-    elif args.loss == "attention_mil_loss":
-        return AttentionMilLoss()
+    elif args.loss == "bce":
+        return BinaryCrossEntropyLoss()
     elif args.loss == "standard":
         return StandardLoss(args)

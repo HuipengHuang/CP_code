@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .base_loss import BaseLoss
 
@@ -9,4 +10,5 @@ class StandardLoss(BaseLoss):
         else:
             self.T = 1
     def forward(self, logits, target):
-        return nn.CrossEntropyLoss()(logits / self.T, target)
+        loss = nn.CrossEntropyLoss()(logits / self.T, target)
+        return loss

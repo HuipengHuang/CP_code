@@ -26,7 +26,7 @@ class AttentionModel(nn.Module):
         )
 
         self.feature_extractor_part2 = nn.Sequential(
-            nn.Linear(50 * 4 * 4, self.M),
+            nn.Linear(1000, self.M),
             nn.ReLU(),
         )
 
@@ -41,6 +41,25 @@ class AttentionModel(nn.Module):
         )
 
     def forward(self, data):
+        if data.shape[0] == 1:
+            return self.forward_without_batch(data)
+        else:
+            return self.forward_with_batch(data)
+    def forward_without_batch(self, H):
+        H = self.feature_extractor_part2(H)  # KxM
+        A = self.attention(H)
+        A = torch.transpose(A, 1, 0)  # ATTENTION_BRANCHESxK
+        A = F.softmax(A, dim=1)  # softmax over K
+
+        Z = A.reshape(1, -1) @ H.squeeze(0) # ATTENTION_BRANCHESxM
+
+        logits = self.classifier(Z)
+        logits = torch.cat((1 - logits, logits), dim=-1)
+        return logits
+
+
+    def forward_with_batch(self, data):
+
         batch_size =data.shape[0]
         num_img = data.shape[1]
         data = data.reshape(batch_size * num_img, data.shape[2], data.shape[3], data.shape[4])
@@ -51,7 +70,7 @@ class AttentionModel(nn.Module):
         # Compute attention for the entire batch
         A = self.attention(H)  # Shape: [batch_size, K, ATTENTION_BRANCHES]
         A = A.transpose(1, 2)  # Transpose to [batch_size, ATTENTION_BRANCHES, K]
-        A = F.softmax(A, dim=2)
+        A = F.softmax(A, dim=-1)
 
         Z = torch.bmm(A, H)
 
@@ -60,7 +79,7 @@ class AttentionModel(nn.Module):
         logits = self.classifier(Z)  # Shape: [batch_size, 1]
 
         # Concatenate logits with (1 - logits) for binary classification
-        logits = torch.cat((1 - logits, logits), dim=1)  # Shape: [batch_size, 2]
+        logits = torch.cat((1 - logits, logits), dim=-1)  # Shape: [batch_size, 2]
 
         return logits
 
@@ -87,17 +106,9 @@ class GatedAttentionModel(nn.Module):
         self.L = 128
         self.ATTENTION_BRANCHES = 1
 
-        self.feature_extractor_part1 = nn.Sequential(
-            nn.Conv2d(1, 20, kernel_size=5),
-            nn.ReLU(),
-            nn.MaxPool2d(2, stride=2),
-            nn.Conv2d(20, 50, kernel_size=5),
-            nn.ReLU(),
-            nn.MaxPool2d(2, stride=2)
-        )
 
         self.feature_extractor_part2 = nn.Sequential(
-            nn.Linear(50 * 4 * 4, self.M),
+            nn.Linear(1000, self.M),
             nn.ReLU(),
         )
 
@@ -118,23 +129,41 @@ class GatedAttentionModel(nn.Module):
         )
 
     def forward(self, data):
-        batch_logits = torch.zeros(size=(data.shape[0], 2), device=data.device)
-        for i in range(data.shape[0]):
-            x = x.squeeze(0)
+        return self.forward_without_batch(data)
 
-            H = self.feature_extractor_part1(x)
-            H = H.view(-1, 50 * 4 * 4)
+    def forward_without_batch(self, H):
+        H = self.feature_extractor_part2(H)  # KxM
+        A_V = self.attention_V(H)  # KxL
+        A_U = self.attention_U(H)  # KxL
+        A = self.attention_w(A_V * A_U)  # element wise multiplication # KxATTENTION_BRANCHES
+        A = torch.transpose(A, 1, 0)  # ATTENTION_BRANCHESxK
+        A = F.softmax(A, dim=-1)  # softmax over K
+        Z = A.reshape(1, -1) @ H.squeeze(0)  # ATTENTION_BRANCHESxM
+        logits = self.classifier(Z)
+        logits = torch.cat((1 - logits, logits), dim=1)
+        return logits
 
-            H = self.feature_extractor_part2(H)  # KxM
-            A_V = self.attention_V(H)  # KxL
-            A_U = self.attention_U(H)  # KxL
-            A = self.attention_w(A_V * A_U) # element wise multiplication # KxATTENTION_BRANCHES
-            A = torch.transpose(A, 1, 0)  # ATTENTION_BRANCHESxK
-            A = F.softmax(A, dim=1)  # softmax over K
+"""    def forward(self, data):
+        if data.shape[0] == 1:
+            return self.forward_without_batch(data)
+        else:
+            #return self.forward_with_batch(data)"""
 
-            Z = torch.mm(A, H)  # ATTENTION_BRANCHESxM
+"""  def forward_with_batch(self, H):
+        H = H.view(batch_size, -1, 800)
+        H = self.feature_extractor_part2(H)  # KxM
 
-            logits = self.classifier(Z)
-            logits = torch.cat((1 - logits, logits), dim=1)
-            batch_logits[i] = logits
-        return batch_logits
+        A_V = self.attention_V(H)  # KxL
+        A_U = self.attention_U(H)  # KxL
+        A = self.attention_w(A_V * A_U) # element wise multiplication # KxATTENTION_BRANCHES
+        A = torch.transpose(A, 1, 2)  # ATTENTION_BRANCHESxK
+        A = F.softmax(A, dim=-1)  # softmax over K
+
+        Z = torch.bmm(A, H)  # ATTENTION_BRANCHESxM
+
+        logits = self.classifier(Z)
+
+        logits = torch.cat((1 - logits, logits), dim=1)
+        logits = logits.squeeze(2)
+        return logits"""
+

@@ -1,14 +1,15 @@
 import argparse
 from torch.utils.data import DataLoader
 from common.utils import set_seed, save_exp_result
-from datasets.utils import build_dataset
+from datasets.utils import build_dataset, build_dataloader
 from trainers.utils import get_trainer
 
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--model", type=str, default="resnet50", help='Choose neural network architecture.')
-parser.add_argument("--dataset", type=str, default="cifar100", choices=["cifar10", "cifar100", "imagenet", "mnist_bag"],
+parser.add_argument("--gpu", type=int,help="CUDA device ID (e.g., 0, 1, etc.)")
+parser.add_argument("--dataset", type=str, default="cifar100", choices=["cifar10", "cifar100", "imagenet", "mnist_bag", "camelyon17"],
                     help="Choose dataset for training.")
 parser.add_argument('--seed', type=int, default=None)
 parser.add_argument("--pretrained", default="False", type=str, choices=["True", "False"])
@@ -17,7 +18,7 @@ parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp
                     help="standard means only evaluate top1 accuracy."
                          "cp means use conformal prediction at evaluation stage. "
                          "Uncertainty aware training use uatr. Otherwise use standard")
-parser.add_argument("--multi_instance_learning", "-mil", default=None, type=str, choices=["True", "False"],)
+parser.add_argument("--final_activation_function",default="softmax", choices=["softmax", "sigmoid"])
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
@@ -27,10 +28,14 @@ parser.add_argument("--batch_size",'-bsz', type=int, default=32)
 parser.add_argument("--momentum", type=float, default=0, help='Momentum')
 parser.add_argument("--weight_decay", type=float, default=0, help='Weight decay')
 parser.add_argument("--nesterov", default=False, choices=["True", "False"], type=str)
-parser.add_argument("--loss", type=str,default='standard', choices=['standard', 'conftr', 'ua', "cadapter", "attention_mil_loss"],
+parser.add_argument("--loss", type=str,default='standard', choices=['standard', 'conftr', 'ua', "cadapter", "bce"],
                     help='Loss function you want to use. standard loss is Cross Entropy Loss.')
 
-#  Hyperpatameters for Conformal Prediction
+#  Hyperparameters for Multi-instance learning
+parser.add_argument("--multi_instance_learning", "-mil", default=None, type=str, choices=["True", "False"],)
+parser.add_argument("--compute_auc","-auc", default=None, type=str, choices=["True", "False"],help="Compute AUC or not.")
+
+#  Hyperparameters for Conformal Prediction
 parser.add_argument("--alpha", type=float, default=0.1, help="Error Rate")
 parser.add_argument("--train_score", type=str, default=None, choices=["thr", "thrlp"],
                     help="train_score is set to be the same as test_score when --train_score is None.")
@@ -74,11 +79,7 @@ if seed:
     set_seed(seed)
 
 if args.algorithm == "cp" or args.algorithm == "uatr":
-    train_dataset, cal_dataset, test_dataset, num_classes = build_dataset(args)
-
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, drop_last=True)
-    cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
+    train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
 
     trainer = get_trainer(args, num_classes)
 
@@ -90,11 +91,8 @@ if args.algorithm == "cp" or args.algorithm == "uatr":
         print(f'{key}: {value}')
 
 else:
-    train_dataset, _, test_dataset, num_classes = build_dataset(args)
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, drop_last=True)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
-
+    train_loader, _, test_loader, num_classes = build_dataloader(args)
     trainer = get_trainer(args, num_classes)
 
     trainer.train(train_loader, args.epochs)

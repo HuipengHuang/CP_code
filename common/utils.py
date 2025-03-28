@@ -18,11 +18,20 @@ def save_exp_result(args, trainer, result_dict, path=None):
         path = f"./experiment/{args.algorithm}"
     name = f"{args.dataset}_{args.model}_{args.loss}loss"
     save_path = os.path.join(path, name)
+
+    i = 0
+    while True:
+        if os.path.exists(save_path):
+            save_path = os.path.join(path, name+f"{i}")
+            i += 1
+        else:
+            break
+
     os.makedirs(save_path, exist_ok=True)
     with open(os.path.join(save_path, "result.txt"), "w") as f:
-        f.write('Epoch, Coverage, Top1 Accuracy, Average Size\n')
-        f.write(f"{args.epochs}, {result_dict["Coverage"]}, {result_dict["Top1Accuracy"]}, {result_dict["AverageSetSize"]}\n\n")
-        f.write("Detailed Setup \n")
+        for key in result_dict.keys():
+            f.write(f"{key}: {result_dict[key]}\n")
+        f.write("\nDetailed Setup \n")
         args_dict = vars(args)
         for k, v in args_dict.items():
             if v is not None:

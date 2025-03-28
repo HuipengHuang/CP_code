@@ -13,6 +13,7 @@ class Predictor:
         else:
             self.train_score = get_train_score(args)
         self.adapter = adapter
+        self.compute_auc = (args.compute_auc == "True")
         self.score = None
         self.threshold = None
         self.alpha = args.alpha
@@ -156,6 +157,11 @@ class Predictor:
                 result_dict = {"Top1Accuracy": accuracy,
                                "AverageSetSize": avg_set_size,
                                "Coverage": coverage}
+
+            if self.compute_auc:
+                auc = self.get_auc(test_loader)
+                result_dict["AUC"] = auc
+
             return result_dict
 
     def evaluate_without_cp(self, test_loader):
@@ -190,35 +196,47 @@ class Predictor:
 
                 accuracy = total_accuracy / len(test_loader.dataset)
                 result_dict = {"Top1Accuracy": accuracy}
+
+            if self.compute_auc:
+                auc = self.get_auc(test_loader)
+                result_dict["AUC"] = auc
             return result_dict
 
-    def compute_auc(self,test_loader):
+    def get_auc(self,test_loader):
         if self.num_classes == 2:
+            auroc = AUROC(task="binary")
+
+            true_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
+            label = torch.tensor([]).to(self.device)
+
+            for data, target in test_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                logits = self.net(data)
+                if self.adapter:
+                    logits = self.adapter(logits)
+
+                prob = self.final_activation_function(logits)
+                true_label_prob = torch.cat((true_label_prob, prob[torch.arange(prob.shape[0]), target]), dim=0)
+                label = torch.cat((label, target), dim=0)
+            return auroc(true_label_prob, label)
+
+        else:
+            auroc = AUROC(task="multiclass", num_classes=self.num_classes)
+
             all_prob = torch.tensor([], dtype=torch.float).to(self.device)
             label = torch.tensor([]).to(self.device)
             for data, target in test_loader:
                 data, target = data.to(self.device), target.to(self.device)
-                logits = self.adapter(self.net(data))
+                logits = self.net(data)
+                if self.adapter:
+                    logits = self.adapter(logits)
 
                 prob = self.final_activation_function(logits)
-                all_prob = torch.cat((all_prob, prob), dim=1)
-                label = torch.cat((label, target), dim=0)
-            auroc = AUROC(task="binary")
-        else:
-            true_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
-            label = torch.tensor([]).to(self.device)
-            for data, target in test_loader:
-                data, target = data.to(self.device), target.to(self.device)
-                logits = self.adapter(self.net(data))
-
-                prob = self.final_activation_function(logits)
-                true_label_prob = torch.cat(
-                    (true_label_prob, prob[torch.arange(prob.shape[0], device=prob.device), target]), dim=0)
+                all_prob = torch.cat(
+                    (all_prob, prob), dim=0)
                 label = torch.cat((label, target), dim=0)
 
-            auroc =AUROC(task="multiclass", num_classes=self.num_classes)
-        auc = auroc(true_label_prob, label)
-        return auc
+            return auroc(all_prob, label)
 
     def set_mode(self, mode="train"):
         if mode == "train":

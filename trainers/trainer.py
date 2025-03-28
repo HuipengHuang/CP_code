@@ -1,4 +1,5 @@
 import torch
+import torchvision
 from tqdm import tqdm
 import models
 from predictors import predictor
@@ -11,8 +12,8 @@ class Trainer:
     Trainer class that implement all the functions regarding training.
     All the arguments are passed through args."""
     def __init__(self, args, num_classes):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.net = models.utils.build_model(args.model, (args.pretrained == "True"), num_classes=num_classes, device=self.device)
+        self.device = torch.device(f"cuda:{args.gpu}")
+        self.net = models.utils.build_model(args, num_classes=num_classes)
         self.batch_size = args.batch_size
         if args.optimizer == 'sgd':
             self.optimizer = torch.optim.SGD(self.net.parameters(), lr=args.learning_rate, momentum=args.momentum,
@@ -20,10 +21,8 @@ class Trainer:
         if args.optimizer == 'adam':
             self.optimizer = torch.optim.Adam(self.net.parameters(), lr=args.learning_rate,weight_decay=args.weight_decay)
 
-        if args.multi_instance_learning == "True":
-            final_activation_function = "sigmoid"
-        else:
-            final_activation_function = "softmax"
+
+        final_activation_function = args.final_activation_function
 
         if args.cadapter == "True":
             self.adapter = CAdapter(num_classes, num_classes, self.device)
@@ -80,7 +79,9 @@ class Trainer:
 
     def set_train_mode(self, train_net, train_adapter):
         assert self.adapter is not None, print("The trainer does not have an adapter.")
-        for param in self.adapter.adapter_net.parameters():
-            param.requires_grad = train_adapter
-        for param in self.net.parameters():
-            param.requires_grad = train_net
+        if not train_adapter:
+            for param in self.adapter.adapter_net.parameters():
+                param.requires_grad = train_adapter
+        if not train_net:
+            for param in self.net.parameters():
+                param.requires_grad = train_net
