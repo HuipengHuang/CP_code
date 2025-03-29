@@ -36,6 +36,7 @@ def save_exp_result(args, trainer, result_dict, path=None):
         for k, v in args_dict.items():
             if v is not None:
                 f.write(f"{k}: {v}\n")
-    torch.save(trainer.net.state_dict(), os.path.join(save_path, "model.pth"))
-    if args.adapter == "True":
-        torch.save(trainer.adapter.adapter_net.state_dict(), os.path.join(save_path, "adapter.pth"))
+    if args.save_model == "True":
+        torch.save(trainer.net.state_dict(), os.path.join(save_path, "model.pth"))
+        if args.adapter == "True":
+            torch.save(trainer.adapter.adapter_net.state_dict(), os.path.join(save_path, "adapter.pth"))

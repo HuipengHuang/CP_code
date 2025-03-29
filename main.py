@@ -14,6 +14,7 @@ parser.add_argument("--dataset", type=str, default="cifar100", choices=["cifar10
 parser.add_argument('--seed', type=int, default=None)
 parser.add_argument("--pretrained", default="False", type=str, choices=["True", "False"])
 parser.add_argument("--save", default="False", choices=["True", "False"], type=str)
+parser.add_argument("--save_model", default=None, choices=["True", "False"])
 parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp", "uatr"],
                     help="standard means only evaluate top1 accuracy."
                          "cp means use conformal prediction at evaluation stage. "
