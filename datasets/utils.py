@@ -10,12 +10,6 @@ from .camelyon17 import MILCamelyon17
 import os
 from torchvision import models
 
-def wsi_collate_fn(batch):
-    """For handling camelyon17 dataset"""
-    inputs = torch.stack([item[0] for item in batch], dim=0)
-    labels = torch.stack([item[1] for item in batch])
-    #metadata = torch.stack([item[2] for item in batch])
-    return inputs, labels
 
 def build_dataset(args):
     dataset_name = args.dataset
@@ -62,7 +56,7 @@ def build_dataset(args):
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
 
-        if args.save_features == "True":
+        if args.save_feature == "True":
             dataset = wilds.get_dataset(dataset="camelyon17", download=True)
 
             train_dataset = dataset.get_subset("train")
