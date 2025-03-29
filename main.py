@@ -19,6 +19,7 @@ parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp
                          "cp means use conformal prediction at evaluation stage. "
                          "Uncertainty aware training use uatr. Otherwise use standard")
 parser.add_argument("--final_activation_function",default="softmax", choices=["softmax", "sigmoid"])
+parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")

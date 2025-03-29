@@ -62,20 +62,21 @@ def build_dataset(args):
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
 
-        dataset = wilds.get_dataset(dataset="camelyon17", download=True)
+        if args.save_features == "True":
+            dataset = wilds.get_dataset(dataset="camelyon17", download=True)
 
-        train_dataset = dataset.get_subset("train")
-        #  Validation (ID)
-        id_cal_dataset = dataset.get_subset("id_val")
-        #  Validation(OOD)
-        od_cal_dataset = dataset.get_subset("val")
-        test_dataset = dataset.get_subset("test")
+            train_dataset = dataset.get_subset("train")
+            #  Validation (ID)
+            id_cal_dataset = dataset.get_subset("id_val")
+            #  Validation(OOD)
+            od_cal_dataset = dataset.get_subset("val")
+            test_dataset = dataset.get_subset("test")
 
-        #  Make Sure the calibration data and the test data are exchangeable.
-        concat_dataset = ConcatDataset((id_cal_dataset, od_cal_dataset, test_dataset))
+            #  Make Sure the calibration data and the test data are exchangeable.
+            concat_dataset = ConcatDataset((id_cal_dataset, od_cal_dataset, test_dataset))
 
-        save_features(device=device,path="./data/camelyon17_features/train", dataset=train_dataset)
-        save_features(device=device,path="./data/camelyon17_features/test", dataset=concat_dataset)
+            save_features(device=device, path="./data/camelyon17_features/train", dataset=train_dataset)
+            save_features(device=device, path="./data/camelyon17_features/test", dataset=concat_dataset)
 
         mil_train_dataset = MILCamelyon17(device=device,path="./data/camelyon17_features/train")
         mil_cal_test_dataset = MILCamelyon17(device, path="./data/camelyon17_features/test")
