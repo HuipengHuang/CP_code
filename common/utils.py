@@ -16,7 +16,7 @@ def set_seed(seed):
 def save_exp_result(args, trainer, result_dict, path=None):
     if path is None:
         path = f"./experiment/{args.algorithm}"
-    name = f"{args.dataset}_{args.model}_{args.loss}loss"
+    name = f"{args.dataset}_{args.model}_{args.test_score}_{args.loss}loss"
     save_path = os.path.join(path, name)
 
     i = 0
