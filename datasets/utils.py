@@ -1,9 +1,14 @@
+import csv
+
 import torch
+import torchvision
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader, Subset, random_split
 from torch.utils.data import ConcatDataset
 import wilds
 from .camelyon17 import MILCamelyon17
+import os
+from torchvision import models
 
 def wsi_collate_fn(batch):
     """For handling camelyon17 dataset"""
@@ -55,6 +60,8 @@ def build_dataset(args):
         assert args.batch_size == 1, print("Batch size must be 1.")
 
         num_classes = 2
+        device = torch.device(f"cuda:{args.gpu}")
+
         dataset = wilds.get_dataset(dataset="camelyon17", download=True)
 
         train_dataset = dataset.get_subset("train")
@@ -66,14 +73,15 @@ def build_dataset(args):
 
         #  Make Sure the calibration data and the test data are exchangeable.
         concat_dataset = ConcatDataset((id_cal_dataset, od_cal_dataset, test_dataset))
-        cal_size = int(len(concat_dataset) * args.cal_ratio)
-        test_size = len(concat_dataset) - cal_size
-        cal_dataset, test_dataset = random_split(concat_dataset, [cal_size, test_size])
 
-        device = torch.device(f"cuda:{args.gpu}")
-        mil_train_dataset = MILCamelyon17(train_dataset, device, transform=transforms.Compose([transforms.ToTensor()]))
-        mil_test_dataset = MILCamelyon17(test_dataset, device, transform=transforms.Compose([transforms.ToTensor()]))
-        mil_cal_dataset = MILCamelyon17(cal_dataset, device, transform=transforms.Compose([transforms.ToTensor()]))
+        save_features(device=device,path="./data/camelyon17_features/train", dataset=train_dataset)
+        save_features(device=device,path="./data/camelyon17_features/test", dataset=concat_dataset)
+
+        mil_train_dataset = MILCamelyon17(device=device,path="./data/camelyon17_features/train")
+        mil_cal_test_dataset = MILCamelyon17(device, path="./data/camelyon17_features/test")
+        cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+        test_size = len(mil_cal_test_dataset) - cal_size
+        mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
         return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
 
     if args.algorithm != "standard":
@@ -130,3 +138,49 @@ def split_dataloader(original_dataloader, split_ratio=0.5):
         subset2 = Subset(dataset, indices_subset2)
 
         return subset1, subset2
+
+
+def save_features(device, path, dataset, transform=torchvision.transforms.Compose([transforms.ToTensor(),
+                                                                                   transforms.Normalize(mean=[0.485, 0.456, 0.406],  std=[0.229, 0.224, 0.225]
+    )])):
+    if os.path.exists(path):
+        return
+    else:
+        os.makedirs(path)
+        os.mkdir(path+"/data")
+
+    with torch.no_grad():
+        feature_extractor_part = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(device)
+        feature_extractor_part.eval()
+
+        dictionary = {}
+        for i in range(len(dataset)):
+            img, label, metadata = dataset[i]
+            img_tensor = transform(img).to(device)
+            label = label.to(device)
+            metadata = tuple(metadata.tolist())
+
+            if metadata not in dictionary.keys():
+
+                dictionary[metadata] = [feature_extractor_part(img_tensor.unsqueeze(0)), label]
+            else:
+                dictionary[metadata][0] = torch.cat(
+                    (dictionary[metadata][0], feature_extractor_part(img_tensor.unsqueeze(0))), dim=0)
+
+        label_mapping = []
+        for i, (metadata, value) in enumerate(dictionary.items()):
+            data, label = value
+            # Save the feature tensor
+            save_path = os.path.join(path, f'data/data_{i}.pth')
+            torch.save(data, save_path)
+
+            # Store filename and label for CSV
+            label_value = label.item()
+            label_mapping.append((f'{i}', label_value))
+
+        # Save labels to CSV
+        csv_path = os.path.join(path, 'labels.csv')
+        with open(csv_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['filename', 'label'])  # Header
+            writer.writerows(label_mapping)

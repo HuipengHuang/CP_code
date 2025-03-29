@@ -1,40 +1,54 @@
+import csv
+import os
+
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
 from torchvision import models
 from tqdm import tqdm
 
+
 class MILCamelyon17(Dataset):
-    def __init__(self, dataset, device, transform=transforms.ToTensor()):
+    def __init__(self, device, path):
         self.device = device
-        self.feature_extractor_part = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
-        for param in self.feature_extractor_part.parameters():
-            param.requires_grad = False
+        self.data_list = []
+        self.label_list = []
+        self.path = path
 
-        dict ={}
-        for i in range(len(dataset)):
-            img, label, metadata = dataset[i]
-            img_tensor = transform(img).to(self.device)
-            label = label.to(self.device)
-            metadata = tuple(metadata.tolist())
-            if metadata not in dict:
-                dict[metadata] = [self.feature_extractor_part(img_tensor.unsqueeze(0)), label]
-            else:
-                dict[metadata][0] = torch.cat((dict[metadata][0], self.feature_extractor_part(img_tensor.unsqueeze(0))), dim=0)
+        # Correct CSV filename based on your save_features function
+        csv_path = os.path.join(path, 'labels.csv')
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"Labels CSV not found at {csv_path}")
 
-        self.bag = []
-        self.label = []
-        for val in dict.values():
-            self.bag.append(val[0])
-            self.label.append(val[1])
+        with open(csv_path, 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                # Extract filename and label from CSV
+                file_idx = row['filename']  # This is just the index number
+                label = eval(row['label'])  # Convert string to int or list
+
+                # Construct the full filepath
+                # Note: your save_features saves to 'data/data_{i}.pth'
+                data_path = os.path.join(path, 'data', f'data_{file_idx}.pth')
+
+                # Load data and move to device
+                data = torch.load(data_path)
+
+                label = torch.tensor(label)
+
+                self.data_list.append(data)
+                self.label_list.append(label)
 
     def __len__(self):
-        return len(self.label)
+        return len(self.label_list)  # Use label_list, not label
 
     def __getitem__(self, idx):
-        data = self.bag[idx]
-        label = self.label[idx]
+        data = self.data_list[idx]
+        label = self.label_list[idx]
         return data, label
+
+
+
 
 
 """class MILCamelyon17(Dataset):
@@ -72,3 +86,5 @@ class MILCamelyon17(Dataset):
         bag = torch.cat(bag_tensor, dim=0)
         label = label.to(self.device)
         return bag, label"""
+
+

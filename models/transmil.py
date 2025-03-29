@@ -30,24 +30,24 @@ class TransLayer(nn.Module):
 
 
 class TransMIL(nn.Module):
-    def __init__(self, n_classes=2):
+    def __init__(self, device, n_classes=2):
         super(TransMIL, self).__init__()
 
         self.pos_layer = PPEG(dim=512)
         self._fc1 = nn.Sequential(nn.Linear(1000, 512), nn.ReLU())
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 512)).to(device)
         self.n_classes = n_classes
         self.layer1 = TransLayer(dim=512)
         self.layer2 = TransLayer(dim=512)
         self.norm = nn.LayerNorm(512)
         self._fc2 = nn.Linear(512, self.n_classes)
-
+        self.device = device
 
     def forward(self, h):
         h = self._fc1(h)  # [B, n, 512]
         # ---->cls_token
         B = h.shape[0]
-        cls_tokens = self.cls_token.expand(B, -1, -1).cuda()
+        cls_tokens = self.cls_token.expand(B, -1, -1)
         h = torch.cat((cls_tokens, h), dim=1)
 
         # ---->Translayer x1

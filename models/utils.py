@@ -38,7 +38,7 @@ def build_model(args, num_classes=None):
         if args.final_activation_function != "sigmoid":
             print(f"Attention. Activation function you use for the binary classification task is {args.final_activation_function} but not sigmoid.")
         assert num_classes is not None, print("num_classes is none")
-        net = transmil.TransMIL(num_classes)
+        net = transmil.TransMIL(device, num_classes)
     elif model_type == "rrtmil":
         net = rrtmil.RRT()
     elif net is None:
