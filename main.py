@@ -1,9 +1,9 @@
 import argparse
 from torch.utils.data import DataLoader
 from common.utils import set_seed, save_exp_result
-from datasets.utils import build_dataset, build_dataloader
+from datasets.utils import build_dataloader, build_subset_dataloader
 from trainers.utils import get_trainer
-
+import torch
 
 parser = argparse.ArgumentParser()
 
@@ -20,6 +20,7 @@ parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp
                          "cp means use conformal prediction at evaluation stage. "
                          "Uncertainty aware training use uatr. Otherwise use standard")
 parser.add_argument("--final_activation_function",default="softmax", choices=["softmax", "sigmoid"])
+
 parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 
 #  Training configuration
@@ -80,8 +81,30 @@ args = parser.parse_args()
 seed = args.seed
 if seed:
     set_seed(seed)
+if args.save_memory == "True" and (args.algorithm == "cp" or args.algorithm == "uatr"):
+    train_loader, _, num_classes = build_subset_dataloader(args, train=True)
+    trainer = get_trainer(args, num_classes)
 
-if args.algorithm == "cp" or args.algorithm == "uatr":
+    trainer.train(train_loader, args.epochs)
+
+    if train_loader is not None:
+        if hasattr(train_loader, 'dataset') and train_loader.dataset is not None:
+            # Delete dataset tensors if they exist
+            if hasattr(train_loader.dataset, 'data'):
+                del train_loader.dataset.data
+            if hasattr(train_loader.dataset, 'targets'):
+                del train_loader.dataset.targets
+            del train_loader.dataset
+        del train_loader
+    torch.cuda.empty_cache()
+
+    cal_loader, test_loader, num_classes = build_subset_dataloader(args, train=False)
+    trainer.predictor.calibrate(cal_loader)
+    result_dict = trainer.predictor.evaluate(test_loader)
+    for key, value in result_dict.items():
+        print(f'{key}: {value}')
+
+elif args.algorithm == "cp" or args.algorithm == "uatr":
     train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
 
     trainer = get_trainer(args, num_classes)
