@@ -168,8 +168,6 @@ def save_features(device, path, dataset, transform=torchvision.transforms.Compos
 
         dictionary = {}
         for i in range(len(dataset)):
-            if i==1000:
-                break
             img, label, metadata = dataset[i]
             img_tensor = transform(img).to(device)
             label = label.to(device)
