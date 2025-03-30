@@ -1,11 +1,8 @@
 import csv
 import os
-
+from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset
-from torchvision.transforms import transforms
-from torchvision import models
-from tqdm import tqdm
 
 
 class MILCamelyon17(Dataset):
@@ -15,6 +12,7 @@ class MILCamelyon17(Dataset):
         self.label_list = []
         self.path = path
 
+
         # Correct CSV filename based on your save_features function
         csv_path = os.path.join(path, 'labels.csv')
         if not os.path.exists(csv_path):
@@ -22,7 +20,7 @@ class MILCamelyon17(Dataset):
 
         with open(csv_path, 'r') as csvfile:
             reader = csv.DictReader(csvfile)
-            for row in reader:
+            for row in tqdm(reader,desc="Loading dataset"):
                 # Extract filename and label from CSV
                 file_idx = row['filename']  # This is just the index number
                 label = eval(row['label'])  # Convert string to int or list
@@ -86,5 +84,3 @@ class MILCamelyon17(Dataset):
         bag = torch.cat(bag_tensor, dim=0)
         label = label.to(self.device)
         return bag, label"""
-
-

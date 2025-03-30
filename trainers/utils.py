@@ -8,3 +8,4 @@ def get_trainer(args, num_classes):
     else:
         trainer = Trainer(args, num_classes)
     return trainer
+

@@ -34,7 +34,7 @@ class TransMIL(nn.Module):
         super(TransMIL, self).__init__()
 
         self.pos_layer = PPEG(dim=512)
-        self._fc1 = nn.Sequential(nn.Linear(1000, 512), nn.ReLU())
+        self._fc1 = nn.Sequential(nn.Linear(1024, 512), nn.ReLU())
         self.cls_token = nn.Parameter(torch.randn(1, 1, 512)).to(device)
         self.n_classes = n_classes
         self.layer1 = TransLayer(dim=512)

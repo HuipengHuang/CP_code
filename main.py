@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--model", type=str, default="resnet50", help='Choose neural network architecture.')
 parser.add_argument("--gpu", type=int,help="CUDA device ID (e.g., 0, 1, etc.)")
-parser.add_argument("--dataset", type=str, default="cifar100", choices=["cifar10", "cifar100", "imagenet", "mnist_bag", "camelyon17"],
+parser.add_argument("--dataset", type=str, default="cifar100", choices=["cifar10", "cifar100", "imagenet", "mnist_bag", "camelyon17", "camelyon16"],
                     help="Choose dataset for training.")
 parser.add_argument('--seed', type=int, default=None)
 parser.add_argument("--pretrained", default="False", type=str, choices=["True", "False"])
@@ -30,6 +30,7 @@ parser.add_argument("--batch_size",'-bsz', type=int, default=32)
 parser.add_argument("--momentum", type=float, default=0, help='Momentum')
 parser.add_argument("--weight_decay", type=float, default=0, help='Weight decay')
 parser.add_argument("--nesterov", default=False, choices=["True", "False"], type=str)
+parser.add_argument("--learning_rate_scheduler", default=None, type=str, choices=["cosine"])
 parser.add_argument("--loss", type=str,default='standard', choices=['standard', 'conftr', 'ua', "cadapter", "bce"],
                     help='Loss function you want to use. standard loss is Cross Entropy Loss.')
 

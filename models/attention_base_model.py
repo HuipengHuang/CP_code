@@ -16,17 +16,10 @@ class AttentionModel(nn.Module):
         self.L = 128
         self.ATTENTION_BRANCHES = 1
 
-        self.feature_extractor_part1 = nn.Sequential(
-            nn.Conv2d(1, 20, kernel_size=5),
-            nn.ReLU(),
-            nn.MaxPool2d(2, stride=2),
-            nn.Conv2d(20, 50, kernel_size=5),
-            nn.ReLU(),
-            nn.MaxPool2d(2, stride=2)
-        )
+
 
         self.feature_extractor_part2 = nn.Sequential(
-            nn.Linear(1000, self.M),
+            nn.Linear(1024, self.M),
             nn.ReLU(),
         )
 
@@ -108,7 +101,7 @@ class GatedAttentionModel(nn.Module):
 
 
         self.feature_extractor_part2 = nn.Sequential(
-            nn.Linear(1000, self.M),
+            nn.Linear(1024, self.M),
             nn.ReLU(),
         )
 

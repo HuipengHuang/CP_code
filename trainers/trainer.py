@@ -1,11 +1,11 @@
 import torch
-import torchvision
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 import models
 from predictors import predictor
 from loss.utils import get_loss_function
 from .cadapter import CAdapter, Adapter
-
+from .early_stoping import EarlyStopping
 
 class Trainer:
     """
@@ -21,6 +21,10 @@ class Trainer:
         if args.optimizer == 'adam':
             self.optimizer = torch.optim.Adam(self.net.parameters(), lr=args.learning_rate,weight_decay=args.weight_decay)
 
+        if args.learning_rate_scheduler == 'cosine':
+            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=200)
+        else:
+            self.scheduler = None
 
         final_activation_function = args.final_activation_function
 
@@ -45,22 +49,14 @@ class Trainer:
         self.num_classes = num_classes
         self.loss_function = get_loss_function(args, self.predictor)
 
-    def train_batch_without_adapter(self, data, target):
-        #  split train_batch into train_batch_with_adapter and train_batch_without_adapter
-        #  to avoid judging self.adapter is None in the loop.
+    def train_batch(self, data, target):
         data = data.to(self.device)
         target = target.to(self.device)
+
         logits = self.net(data)
-        loss = self.loss_function(logits, target)
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        if self.adapter:
+            logits = self.adapter(logits)
 
-    def train_batch_with_adapter(self, data, target):
-        data = data.to(self.device)
-        target = target.to(self.device)
-
-        logits = self.adapter(self.net(data))
         loss = self.loss_function(logits, target)
         self.optimizer.zero_grad()
         loss.backward()
@@ -68,14 +64,13 @@ class Trainer:
 
     def train(self, data_loader, epochs):
         self.net.train()
-        if self.adapter is None:
-            for epoch in range(epochs):
-                for data, target in tqdm(data_loader, desc=f"Epoch: {epoch+1} / {epochs}"):
-                    self.train_batch_without_adapter(data, target)
-        else:
-            for epoch in range(epochs):
-                for data, target in tqdm(data_loader, desc=f"Epoch: {epoch+1} / {epochs}"):
-                    self.train_batch_with_adapter(data, target)
+        for epoch in range(epochs):
+            for data, target in tqdm(data_loader, desc=f"Epoch: {epoch+1} / {epochs}"):
+                self.train_batch(data, target)
+
+            if self.scheduler:
+                self.scheduler.step()
+
 
     def set_train_mode(self, train_net, train_adapter):
         assert self.adapter is not None, print("The trainer does not have an adapter.")

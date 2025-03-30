@@ -1,5 +1,4 @@
 import csv
-
 import torch
 import torchvision
 from torchvision.transforms import transforms
@@ -7,6 +6,7 @@ from torch.utils.data import DataLoader, Subset, random_split
 from torch.utils.data import ConcatDataset
 import wilds
 from .camelyon17 import MILCamelyon17
+from .camelyon16 import MILCamelyon16
 import os
 from torchvision import models
 
@@ -46,6 +46,22 @@ def build_dataset(args):
         device = torch.device(f"cuda:{args.gpu}")
         train_dataset = mnist_bag.MnistBags(device, train=True)
         cal_test_dataset = mnist_bag.MnistBags(device, train=False)
+
+    elif dataset_name == "camelyon16":
+        if args.multi_instance_learning != "True":
+            raise ValueError("Please set multi-instance-learning to true.")
+
+        assert args.batch_size == 1, print("Batch size must be 1.")
+        num_classes = 2
+        device = torch.device(f"cuda:{args.gpu}")
+
+        mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features/mDATA_train.pkl")
+        mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features/mDATA_test.pkl")
+
+        cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+        test_size = len(mil_cal_test_dataset) - cal_size
+        mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+        return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
 
     elif dataset_name == "camelyon17":
         if args.multi_instance_learning != "True":
@@ -89,6 +105,7 @@ def build_dataset(args):
 
     return train_dataset, cal_dataset, test_dataset, num_classes
 
+
 def build_dataloader(args):
     train_dataset, cal_dataset, test_dataset, num_classes = build_dataset(args)
     if args.dataset == "camelyon17":
@@ -107,6 +124,7 @@ def build_dataloader(args):
         test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
     return train_laoder, cal_loader, test_laoder, num_classes
+
 
 def split_dataloader(original_dataloader, split_ratio=0.5):
         """
@@ -150,6 +168,8 @@ def save_features(device, path, dataset, transform=torchvision.transforms.Compos
 
         dictionary = {}
         for i in range(len(dataset)):
+            if i==1000:
+                break
             img, label, metadata = dataset[i]
             img_tensor = transform(img).to(device)
             label = label.to(device)
