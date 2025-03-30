@@ -12,12 +12,13 @@ class MILCamelyon16(Dataset):
 
         #  It will return a list. Every element(Every element is a bag) in the list is a list.
         #  Every element in the list is a dictionary. {"feature": (1024,), "label": 0 or 1, 'file_name': ...}
-        data_list = pickle.load(path)
-        for i in tqdm(range(len(data_list)), desc='Loading dataset'):
-            bag_feature = torch.cat([torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data_list[i]], dim=0)
-            bag_label = 1 if 1 in [instance["label"] for instance in data_list[i]] else 0
-            self.data_list.append(bag_feature)
-            self.label_list.append(bag_label)
+        with open(path, "rb") as f:
+            data_list = pickle.load(f)
+            for i in tqdm(range(len(data_list)), desc='Loading dataset'):
+                bag_feature = torch.cat([torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data_list[i]], dim=0)
+                bag_label = 1 if 1 in [instance["label"] for instance in data_list[i]] else 0
+                self.data_list.append(bag_feature)
+                self.label_list.append(bag_label)
 
 
     def __len__(self):
