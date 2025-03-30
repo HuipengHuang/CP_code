@@ -111,14 +111,14 @@ def build_dataloader(args):
     if args.dataset == "camelyon17":
         train_laoder = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
-            cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=True)
+            cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=False)
         else:
             cal_loader = None
         test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     else:
         train_laoder = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
-            cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=True)
+            cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=False)
         else:
             cal_loader = None
         test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
@@ -197,3 +197,27 @@ def save_features(device, path, dataset, transform=torchvision.transforms.Compos
             writer = csv.writer(csvfile)
             writer.writerow(['filename', 'label'])  # Header
             writer.writerows(label_mapping)
+
+
+def build_subset_dataloader(args, train=True):
+    assert args.multi_instance_learning == "True", print("Not supported yet.")
+    dataset_name = args.dataset
+
+    if dataset_name == "camelyon16":
+        assert args.multi_instance_learning == "True", print("Please set multi-instance-learning to true.")
+
+        assert args.batch_size == 1, print("Batch size must be 1.")
+        num_classes = 2
+        device = torch.device(f"cuda:{args.gpu}")
+        if train:
+            mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features/mDATA_train.pkl")
+            train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+            return train_loader, None, num_classes
+        else:
+            mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features/mDATA_test.pkl")
+            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+            test_size = len(mil_cal_test_dataset) - cal_size
+            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+            cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
+            test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
+            return cal_loader, test_loader, num_classes
