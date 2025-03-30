@@ -30,7 +30,7 @@ class AttentionModel(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.M*self.ATTENTION_BRANCHES, 1),
+            nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
         )
 
     def forward(self, data):
@@ -47,7 +47,6 @@ class AttentionModel(nn.Module):
         Z = A.reshape(1, -1) @ H.squeeze(0) # ATTENTION_BRANCHESxM
 
         logits = self.classifier(Z)
-        logits = torch.cat((1 - logits, logits), dim=-1)
         return logits
 
 
@@ -118,7 +117,7 @@ class GatedAttentionModel(nn.Module):
         self.attention_w = nn.Linear(self.L, self.ATTENTION_BRANCHES) # matrix w (or vector w if self.ATTENTION_BRANCHES==1)
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.M*self.ATTENTION_BRANCHES, 1),
+            nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
         )
 
     def forward(self, data):
@@ -132,8 +131,9 @@ class GatedAttentionModel(nn.Module):
         A = torch.transpose(A, 1, 0)  # ATTENTION_BRANCHESxK
         A = F.softmax(A, dim=-1)  # softmax over K
         Z = A.reshape(1, -1) @ H.squeeze(0)  # ATTENTION_BRANCHESxM
+
         logits = self.classifier(Z)
-        logits = torch.cat((1 - logits, logits), dim=1)
+
         return logits
 
 """    def forward(self, data):
