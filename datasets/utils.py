@@ -210,11 +210,12 @@ def build_subset_dataloader(args, train=True):
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
         if train:
-            mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features/mDATA_train.pkl")
+            mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features", train=True)
             train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
             return train_loader, None, num_classes
         else:
-            mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features/mDATA_test.pkl")
+            mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features", train=False)
+
             cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
             test_size = len(mil_cal_test_dataset) - cal_size
             mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
