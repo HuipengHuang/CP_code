@@ -4,6 +4,7 @@ import torch.nn as nn
 import math
 from torchmetrics import AUROC
 import torchsort
+from sklearn.metrics import roc_auc_score
 
 class Predictor:
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
@@ -204,7 +205,7 @@ class Predictor:
 
     def get_auc(self,test_loader):
         if self.num_classes == 2:
-            #auroc = AUROC(task="binary")
+            auroc = AUROC(task="binary")
 
             positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
             label = torch.tensor([]).to(self.device)
@@ -218,7 +219,13 @@ class Predictor:
                 prob = self.final_activation_function(logits)
                 positive_label_prob = torch.cat((positive_label_prob, prob[:, 1]), dim=0)
                 label = torch.cat((label, target), dim=0)
-            return self.compute_binary_auroc(positive_label_prob, label)
+            print("sklearn")
+            print(roc_auc_score(label, positive_label_prob))
+            print("torchmetric")
+            print(auroc(positive_label_prob, label))
+            print("grok")
+            print(self.compute_binary_auroc(positive_label_prob, label))
+            return roc_auc_score(label, positive_label_prob)
 
         else:
             assert self.num_classes > 2, print("num_classes must be geater than 2.")
