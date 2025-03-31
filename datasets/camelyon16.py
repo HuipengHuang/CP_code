@@ -72,7 +72,7 @@ class MILCamelyon16_rn18(Dataset):
 
                 # Construct the full filepath
                 # Note: your save_features saves to 'data/data_{i}.pth'
-                data_path = os.path.join(path, 'data', f'data{file_idx}.pth')
+                data_path = os.path.join(path, 'data', f'data_{file_idx}.pth')
 
                 # Load data and move to device
                 data = torch.load(data_path)
