@@ -14,6 +14,7 @@ def csv2pth(data_path, save_path):
             pass
         with open(save_path + "/test/label.csv", 'w') as f:
             pass
+
     train_writer = csv.writer(open(save_path + "/train/label.csv", 'w', newline=""),)
     train_writer.writerow(['filename', 'label'])
     test_writer = csv.writer(open(save_path + "/test/label.csv", 'w', newline=""))
@@ -45,5 +46,3 @@ def csv2pth(data_path, save_path):
             torch.save(tensor_array, save_path + f"/train/data/data_{i}.pth")
             train_writer.writerow([i, 0])
             i += 1
-
-csv2pth(data_path=r".\data\camelyon16_r18", save_path=r".\data\camelyon16_18_torch")
