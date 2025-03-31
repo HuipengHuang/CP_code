@@ -55,8 +55,8 @@ def build_dataset(args):
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
 
-        mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features/mDATA_train.pkl")
-        mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features/mDATA_test.pkl")
+        mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features")
+        mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features")
 
         cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
         test_size = len(mil_cal_test_dataset) - cal_size
