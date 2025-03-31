@@ -10,6 +10,8 @@ def csv2pth(data_path, save_path):
     else:
         os.makedirs(save_path+"/train", exist_ok=True)
         os.makedirs(save_path+"/test", exist_ok=True)
+        os.makedirs(save_path + "/test/data", exist_ok=True)
+        os.makedirs(save_path + "/train/data", exist_ok=True)
         with open(save_path + "/train/label.csv", 'w') as f:
             pass
         with open(save_path + "/test/label.csv", 'w') as f:
