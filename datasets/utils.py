@@ -55,11 +55,12 @@ def build_dataset(args):
         assert args.batch_size == 1, print("Batch size must be 1.")
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
+        save_path = "./data/camelyon16_rn18_feature"
         if  args.save_feature:
-            csv2pth.csv2pth(data_path=r"./data/camelyon16_rn18_csv", save_path="./data/camelyon_rn18_feature")
+            csv2pth.csv2pth(data_path=r"./data/camelyon16_rn18_csv", save_path=save_path)
 
-        mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_features")
-        mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_features")
+        mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path)
+        mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path)
 
         cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
         test_size = len(mil_cal_test_dataset) - cal_size
