@@ -204,7 +204,7 @@ class Predictor:
 
     def get_auc(self,test_loader):
         if self.num_classes == 2:
-            auroc = AUROC(task="binary")
+            #auroc = AUROC(task="binary")
 
             positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
             label = torch.tensor([]).to(self.device)
@@ -218,7 +218,7 @@ class Predictor:
                 prob = self.final_activation_function(logits)
                 positive_label_prob = torch.cat((positive_label_prob, prob[:, 1]), dim=0)
                 label = torch.cat((label, target), dim=0)
-            return auroc(positive_label_prob, label)
+            return self.compute_binary_auroc(positive_label_prob, label)
 
         else:
             assert self.num_classes > 2, print("num_classes must be geater than 2.")
@@ -246,5 +246,37 @@ class Predictor:
             self.score = self.test_score
         else:
             raise ValueError(f"mode {mode} is not supported. Mode could only be train or test")
+
+    def compute_binary_auroc(self, preds, targets):
+        """
+        Compute AUROC using PyTorch operations.
+        preds: Tensor of predicted probabilities for class 1 (shape: [N])
+        targets: Tensor of true binary labels (0 or 1, shape: [N])
+        """
+        # Sort predictions in descending order and get sorted indices
+        preds_sorted, indices = torch.sort(preds, descending=True)
+        targets_sorted = targets[indices]
+
+        # Compute cumulative TP and FP
+        tp = torch.cumsum(targets_sorted.float(), dim=0)  # Cumulative true positives
+        fp = torch.cumsum((1 - targets_sorted).float(), dim=0)  # Cumulative false positives
+
+        # Total positives and negatives
+        num_positives = tp[-1]  # Last element is total positives
+        num_negatives = fp[-1]  # Last element is total negatives
+
+        # Handle edge cases: if no positives or negatives, return NaN
+        if num_positives == 0 or num_negatives == 0:
+            return torch.tensor(float('nan'), device=preds.device)
+
+        # Compute TPR and FPR
+        tpr = torch.cat([torch.tensor([0.0], device=preds.device), tp / num_positives])
+        fpr = torch.cat([torch.tensor([0.0], device=preds.device), fp / num_negatives])
+
+        # Compute AUROC using trapezoidal rule
+        # Area = Σ [(fpr[i+1] - fpr[i]) * (tpr[i+1] + tpr[i]) / 2]
+        auroc = torch.trapz(tpr, fpr)  # PyTorch's trapezoidal integration
+
+        return auroc
 
 
