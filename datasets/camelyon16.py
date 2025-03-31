@@ -75,7 +75,7 @@ class MILCamelyon16_rn18(Dataset):
                 data_path = os.path.join(path, 'data', f'data_{file_idx}.pth')
 
                 # Load data and move to device
-                data = torch.load(data_path)
+                data = torch.load(data_path).to(torch.float32)
 
                 label = torch.tensor(label)
 
