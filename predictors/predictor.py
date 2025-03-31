@@ -219,13 +219,9 @@ class Predictor:
                 prob = self.final_activation_function(logits)
                 positive_label_prob = torch.cat((positive_label_prob, prob[:, 1]), dim=0)
                 label = torch.cat((label, target), dim=0)
-            print("torchmetric")
-            print(auroc(positive_label_prob, label))
-            print("grok")
-            print(self.compute_binary_auroc(positive_label_prob, label))
-            print("sklearn")
-            print(roc_auc_score(label.to("cpu").numpy(), positive_label_prob.to("cpu").numpy()))
-            return roc_auc_score(label, positive_label_prob)
+
+
+            return auroc(positive_label_prob, label)
 
         else:
             assert self.num_classes > 2, print("num_classes must be geater than 2.")
@@ -285,5 +281,16 @@ class Predictor:
         auroc = torch.trapz(tpr, fpr)  # PyTorch's trapezoidal integration
 
         return auroc
+
+    def cal_auc(y_pred, y_true):
+        fz = 0
+        fm = 0
+        for i in range(0, len(y_true) - 1):
+            for j in range(i + 1, len(y_true)):
+                if y_true[i] != y_true[j]:
+                    fm += 1
+                    if y_true[i] > y_true[j] and y_pred[i] > y_pred[j] or y_true[i] < y_true[j] and y_pred[i] < y_pred[j]:
+                        fz += 1
+        return fz / fm
 
 
