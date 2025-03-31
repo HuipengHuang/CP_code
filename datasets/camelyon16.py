@@ -36,7 +36,7 @@ class MILCamelyon16(Dataset):
                     bag_label = df.loc[key]["Label"]
 
                     self.data_list.append(bag_feature)
-                    self.label_list.append(bag_label)
+                    self.label_list.append(torch.tensor(bag_label,device=device))
 
 
     def __len__(self):
