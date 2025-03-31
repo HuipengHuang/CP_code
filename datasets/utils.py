@@ -59,8 +59,8 @@ def build_dataset(args):
         if  args.save_feature:
             csv2pth.csv2pth(data_path=r"./data/camelyon16_rn18_csv", save_path=save_path)
 
-        mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path)
-        mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path)
+        mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path+"/train")
+        mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path+"/test")
 
         cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
         test_size = len(mil_cal_test_dataset) - cal_size
