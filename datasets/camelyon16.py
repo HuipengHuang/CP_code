@@ -9,6 +9,7 @@ class MILCamelyon16(Dataset):
         self.data_list = []
         self.label_list = []
         self.path = path
+        print("new")
 
         #  It will return a dictionary. Every element(Every element is a bag) in the dictionary's values is a list.
         #  Every element in the list is a dictionary. {"feature": (1024,), "label": 0 or 1, 'file_name': ...}
@@ -17,6 +18,9 @@ class MILCamelyon16(Dataset):
             for data in tqdm(data_dict.values(), desc='Loading dataset'):
                 bag_feature = torch.cat([torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data], dim=0)
                 bag_label = 1 if 1 in [instance["label"] for instance in data] else 0
+                print("--")
+                print(bag_label)
+                print(bag_feature.shape)
                 self.data_list.append(bag_feature)
                 self.label_list.append(bag_label)
 
