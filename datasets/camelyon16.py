@@ -20,7 +20,7 @@ class MILCamelyon16(Dataset):
                     bag_feature = torch.cat(
                         [torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data], dim=0)
                     bag_label = torch.tensor(1, device=device) if 1 in [instance["label"] for instance in data] else torch.tensor(0,device=device)
-                    print(bag_label)
+
                     self.data_list.append(bag_feature)
                     self.label_list.append(bag_label)
 
