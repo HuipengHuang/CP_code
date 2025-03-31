@@ -35,13 +35,12 @@ class MILCamelyon16(Dataset):
                         [torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data_dict[key]], dim=0)
 
                     bag_label = 1 if df.loc[key]["Label"] == "Tumor" else 0
-
                     self.data_list.append(bag_feature)
-                    self.label_list.append(torch.tensor(bag_label,device=device))
+                    self.label_list.append(torch.tensor(bag_label, device=device))
 
 
     def __len__(self):
-        return len(self.label_list)  # Use label_list, not label
+        return len(self.label_list)
 
     def __getitem__(self, idx):
         data = self.data_list[idx]
