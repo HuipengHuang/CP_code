@@ -20,7 +20,7 @@ class MILCamelyon16(Dataset):
                     bag_feature = torch.cat(
                         [torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data], dim=0)
                     bag_label = torch.tensor(1, device=device) if 1 in [instance["label"] for instance in data] else torch.tensor(0,device=device)
-
+                    print(bag_label)
                     self.data_list.append(bag_feature)
                     self.label_list.append(bag_label)
 
@@ -33,7 +33,8 @@ class MILCamelyon16(Dataset):
                 for key in tqdm(data_dict.keys(), desc='Loading dataset'):
                     bag_feature = torch.cat(
                         [torch.tensor(instance["feature"]).to(self.device).unsqueeze(0) for instance in data_dict[key]], dim=0)
-                    bag_label = df.loc[key]["Label"]
+
+                    bag_label = 1 if df.loc[key]["Label"] == "Tumor" else 0
 
                     self.data_list.append(bag_feature)
                     self.label_list.append(torch.tensor(bag_label,device=device))
