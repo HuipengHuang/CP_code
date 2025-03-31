@@ -224,7 +224,7 @@ class Predictor:
             print("grok")
             print(self.compute_binary_auroc(positive_label_prob, label))
             print("sklearn")
-            print(roc_auc_score(positive_label_prob.to("cpu").numpy()), label.to("cpu").numpy())
+            print(roc_auc_score(label.to("cpu").numpy(), positive_label_prob.to("cpu").numpy()))
             return roc_auc_score(label, positive_label_prob)
 
         else:
