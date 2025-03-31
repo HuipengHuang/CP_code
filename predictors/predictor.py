@@ -20,7 +20,7 @@ class Predictor:
         self.net = net
         self.num_classes = num_classes
         if final_activation_function == "softmax":
-            self.final_activation_function = nn.Softmax(dim=1)
+            self.final_activation_function = nn.Softmax(dim=-1)
         elif final_activation_function == "sigmoid":
             self.final_activation_function = nn.Sigmoid()
         else:
@@ -206,7 +206,7 @@ class Predictor:
         if self.num_classes == 2:
             auroc = AUROC(task="binary")
 
-            true_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
+            positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
             label = torch.tensor([]).to(self.device)
 
             for data, target in test_loader:
@@ -216,11 +216,12 @@ class Predictor:
                     logits = self.adapter(logits)
 
                 prob = self.final_activation_function(logits)
-                true_label_prob = torch.cat((true_label_prob, prob[torch.arange(prob.shape[0]), target]), dim=0)
+                positive_label_prob = torch.cat((positive_label_prob, prob[:, 1]), dim=0)
                 label = torch.cat((label, target), dim=0)
-            return auroc(true_label_prob, label)
+            return auroc(positive_label_prob, label)
 
         else:
+            assert self.num_classes > 2, print("num_classes must be geater than 2.")
             auroc = AUROC(task="multiclass", num_classes=self.num_classes)
 
             all_prob = torch.tensor([], dtype=torch.float).to(self.device)
