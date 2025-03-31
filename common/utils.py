@@ -40,3 +40,4 @@ def save_exp_result(args, trainer, result_dict, path=None):
         torch.save(trainer.net.state_dict(), os.path.join(save_path, "model.pth"))
         if args.adapter == "True":
             torch.save(trainer.adapter.adapter_net.state_dict(), os.path.join(save_path, "adapter.pth"))
+

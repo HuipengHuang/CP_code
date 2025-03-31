@@ -19,7 +19,7 @@ class AttentionModel(nn.Module):
 
 
         self.feature_extractor_part2 = nn.Sequential(
-            nn.Linear(1024, self.M),
+            nn.Linear(512, self.M),
             nn.ReLU(),
         )
 
@@ -100,7 +100,7 @@ class GatedAttentionModel(nn.Module):
 
 
         self.feature_extractor_part2 = nn.Sequential(
-            nn.Linear(1024, self.M),
+            nn.Linear(512, self.M),
             nn.ReLU(),
         )
 

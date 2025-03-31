@@ -6,9 +6,10 @@ from torch.utils.data import DataLoader, Subset, random_split
 from torch.utils.data import ConcatDataset
 import wilds
 from .camelyon17 import MILCamelyon17
-from .camelyon16 import MILCamelyon16
+from .camelyon16 import MILCamelyon16, MILCamelyon16_rn18
 import os
 from torchvision import models
+from data_preprocess import csv2pth
 
 
 def build_dataset(args):
@@ -54,9 +55,11 @@ def build_dataset(args):
         assert args.batch_size == 1, print("Batch size must be 1.")
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
+        if  args.save_feature:
+            csv2pth.csv2pth(data_path=r"./data/camelyon16_rn18_csv", save_path="./data/camelyon_rn18_feature")
 
-        mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features")
-        mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features")
+        mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_features")
+        mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_features")
 
         cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
         test_size = len(mil_cal_test_dataset) - cal_size
@@ -109,21 +112,22 @@ def build_dataset(args):
 def build_dataloader(args):
     train_dataset, cal_dataset, test_dataset, num_classes = build_dataset(args)
     if args.dataset == "camelyon17":
-        train_laoder = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
             cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=False)
         else:
             cal_loader = None
         test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     else:
-        train_laoder = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
             cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=False)
         else:
             cal_loader = None
         test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-    return train_laoder, cal_loader, test_laoder, num_classes
+    return train_loader, cal_loader, test_laoder, num_classes
+
 
 
 def split_dataloader(original_dataloader, split_ratio=0.5):
