@@ -219,12 +219,12 @@ class Predictor:
                 prob = self.final_activation_function(logits)
                 positive_label_prob = torch.cat((positive_label_prob, prob[:, 1]), dim=0)
                 label = torch.cat((label, target), dim=0)
-            print("sklearn")
-            print(roc_auc_score(label, positive_label_prob))
             print("torchmetric")
             print(auroc(positive_label_prob, label))
             print("grok")
             print(self.compute_binary_auroc(positive_label_prob, label))
+            print("sklearn")
+            print(roc_auc_score(positive_label_prob.to("cpu")), label.to("cpu"))
             return roc_auc_score(label, positive_label_prob)
 
         else:
