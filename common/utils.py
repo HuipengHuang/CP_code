@@ -19,20 +19,18 @@ def save_exp_result(args, trainer, result_dict, path=None):
     name = f"{args.dataset}_{args.model}_{args.test_score}_{args.loss}loss"
     if args.multi_instance_learning == "True":
         path = f"{path}/mil"
-        name = f"{name}_{args.extract_feature_model}"
+        name = f"{args.extract_feature_model}_{name}"
     save_path = os.path.join(path, name)
 
     i = 0
     while True:
         if os.path.exists(save_path + f"{i}"):
             i += 1
-            save_path = os.path.join(path, name+f"{i}")
-            print(f"save path{save_path}")
         else:
             break
 
     os.makedirs(save_path, exist_ok=True)
-    with open(os.path.join(save_path, "result.txt"), "w") as f:
+    with open(os.path.join(save_path+f"{i}", "result.txt"), "w") as f:
         for key in result_dict.keys():
             f.write(f"{key}: {result_dict[key]}\n")
         f.write("\nDetailed Setup \n")
