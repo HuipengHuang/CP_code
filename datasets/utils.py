@@ -49,27 +49,36 @@ def build_dataset(args):
         cal_test_dataset = mnist_bag.MnistBags(device, train=False)
 
     elif dataset_name == "camelyon16":
-        print("i am in 16")
         if args.multi_instance_learning != "True":
             raise ValueError("Please set multi-instance-learning to true.")
 
         assert args.batch_size == 1, print("Batch size must be 1.")
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
-        save_path = "./data/camelyon16_rn18_feature"
-        if  args.save_feature:
-            csv2pth.csv2pth(data_path=r"./data/camelyon16_rn18_csv", save_path=save_path)
 
-        mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path+"/train")
-        mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path+"/test")
+        if args.extract_feature_model == "resnet18":
+            save_path = "./data/camelyon16_rn18_feature"
+            mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path+"/train")
+            mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path+"/test")
 
-        cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-        test_size = len(mil_cal_test_dataset) - cal_size
-        mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+            test_size = len(mil_cal_test_dataset) - cal_size
+            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+
+        elif args.extract_feature_model == "resnet50":
+            save_path = "./data/camelyon16_rn50_feature"
+            mil_train_dataset = MILCamelyon16(device=device, path=save_path, train=True)
+            mil_cal_test_dataset = MILCamelyon16(device, path=save_path, train=False)
+
+            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+            test_size = len(mil_cal_test_dataset) - cal_size
+            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+
+        else:
+            raise NotImplementedError
         return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
 
     elif dataset_name == "camelyon17":
-        print("I am in 17")
         if args.multi_instance_learning != "True":
             raise ValueError("Please set multi-instance-learning to true.")
 

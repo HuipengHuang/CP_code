@@ -17,13 +17,16 @@ def save_exp_result(args, trainer, result_dict, path=None):
     if path is None:
         path = f"./experiment/{args.algorithm}"
     name = f"{args.dataset}_{args.model}_{args.test_score}_{args.loss}loss"
+    if args.multi_instance_learning == "True":
+        path = f"{path}/mil"
+        name = f"{name}_{args.extract_feature_model}"
     save_path = os.path.join(path, name)
 
     i = 0
     while True:
-        if os.path.exists(save_path):
-            save_path = os.path.join(path, name+f"{i}")
+        if os.path.exists(save_path + f"{i}"):
             i += 1
+            save_path = os.path.join(path, name+f"{i}")
         else:
             break
 

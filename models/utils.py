@@ -31,16 +31,17 @@ def build_model(args, num_classes=None):
         net.classifier = torch.nn.Linear(net.classifier.in_features, num_classes)
 
     if model_type == "attention":
-        net = attention_base_model.AttentionModel()
+        net = attention_base_model.AttentionModel(input_dim=args.input_dim)
+
     elif model_type == "gradattention":
-        net = attention_base_model.GatedAttentionModel()
+        net = attention_base_model.GatedAttentionModel(input_dim=args.input_dim)
     elif model_type == "transmil":
         if args.final_activation_function != "sigmoid":
             print(f"Attention. Activation function you use for the binary classification task is {args.final_activation_function} but not sigmoid.")
         assert num_classes is not None, print("num_classes is none")
-        net = transmil.TransMIL(device, num_classes)
+        net = transmil.TransMIL(device, input_dim=args.input_dim, n_classes=num_classes)
     elif model_type == "rrtmil":
-        net = rrtmil.RRT()
+        net = rrtmil.RRT(input_dim=args.input_dim)
     elif net is None:
         raise ValueError(f"Unsupported model type: {model_type}")
     return net.to(device)
