@@ -7,6 +7,7 @@ from torch.utils.data import ConcatDataset
 import wilds
 from .camelyon17 import MILCamelyon17
 from .camelyon16 import MILCamelyon16, MILCamelyon16_rn18
+from .tcga import TCGA_rn18
 import os
 from torchvision import models
 from data_preprocess import csv2pth
@@ -109,6 +110,29 @@ def build_dataset(args):
         test_size = len(mil_cal_test_dataset) - cal_size
         mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
         return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
+
+    elif dataset_name == "tcga_lung_cancer":
+        if args.multi_instance_learning != "True":
+            raise ValueError("Please set multi-instance-learning to true.")
+
+        assert args.batch_size == 1, print("Batch size must be 1.")
+        num_classes = 2
+        device = torch.device(f"cuda:{args.gpu}")
+
+        if args.save_feature:
+            csv2pth.tcga_rn18_csv2pth(data_path="./data/tcga_rn18_csv", save_path="./data/tcga_rn18_feature")
+
+        if args.extract_feature_model == "resnet18":
+            save_path = "./data/tcga_rn18_feature"
+            mil_train_dataset = TCGA_rn18(device=device, path=save_path, train=True)
+            mil_cal_test_dataset = TCGA_rn18(device, path=save_path+"/test", train=False)
+
+            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+            test_size = len(mil_cal_test_dataset) - cal_size
+            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+            return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
+        else:
+            raise NotImplementedError
 
     if args.algorithm != "standard":
         cal_size = int(len(cal_test_dataset) * args.cal_ratio)
@@ -218,13 +242,15 @@ def save_features(device, path, dataset, transform=torchvision.transforms.Compos
 def build_subset_dataloader(args, train=True):
     assert args.multi_instance_learning == "True", print("Not supported yet.")
     dataset_name = args.dataset
+    device = torch.device(f"cuda:{args.gpu}")
+
+
 
     if dataset_name == "camelyon16":
         assert args.multi_instance_learning == "True", print("Please set multi-instance-learning to true.")
 
         assert args.batch_size == 1, print("Batch size must be 1.")
         num_classes = 2
-        device = torch.device(f"cuda:{args.gpu}")
         if args.extract_feature_model == "resnet50":
             if train:
                 mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_rn50_feature", train=True)
@@ -254,3 +280,24 @@ def build_subset_dataloader(args, train=True):
                 cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
                 test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
                 return cal_loader, test_loader, num_classes
+    elif dataset_name == "tcga_lung_cancer":
+        if args.save_feature:
+            csv2pth.tcga_rn18_csv2pth(data_path="./data/tcga_rn18_csv", save_path="./data/tcga_rn18_feature")
+
+        if args.extract_feature_model == "resnet18":
+            num_classes = 2
+            if train:
+                mil_train_dataset = TCGA_rn18(device=device, path="./data/tcga_rn18_feature", train=True)
+                train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True,
+                                              drop_last=True)
+                return train_loader, None, num_classes
+            else:
+                mil_cal_test_dataset = TCGA_rn18(device, path="./data/tcga_rn18_feature", train=False)
+                cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+                test_size = len(mil_cal_test_dataset) - cal_size
+                mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+                cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
+                test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
+                return cal_loader, test_loader, num_classes
+    else:
+        raise NotImplementedError
