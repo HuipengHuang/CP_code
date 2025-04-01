@@ -22,6 +22,9 @@ parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp
 parser.add_argument("--final_activation_function",default="softmax", choices=["softmax", "sigmoid"])
 parser.add_argument("--save_memory", default=None, choices=["True", "False"])
 parser.add_argument("--save_feature", default=None, choices=["True", "False"])
+parser.add_argument("--save_result", default=None, choices=["True", "False"])
+parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
+parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
