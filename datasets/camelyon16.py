@@ -51,10 +51,14 @@ class MILCamelyon16(Dataset):
         return data, label
 
 class MILCamelyon16_rn18(Dataset):
-    def __init__(self, device, path):
+    def __init__(self, device, path, train):
         self.device = device
         self.data_list = []
         self.label_list = []
+        if train == True:
+            path = path + "/train/"
+        else:
+            path = path + "/test/"
         self.path = path
 
 

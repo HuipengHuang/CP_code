@@ -58,8 +58,8 @@ def build_dataset(args):
 
         if args.extract_feature_model == "resnet18":
             save_path = "./data/camelyon16_rn18_feature"
-            mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path+"/train")
-            mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path+"/test")
+            mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path, train=True)
+            mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path+"/test", train=False)
 
             cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
             test_size = len(mil_cal_test_dataset) - cal_size
@@ -242,12 +242,12 @@ def build_subset_dataloader(args, train=True):
 
         elif args.extract_feature_model == "resnet18":
             if train:
-                mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_rn18_feature")
+                mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_rn18_feature", train=True)
                 train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True,
                                               drop_last=True)
                 return train_loader, None, num_classes
             else:
-                mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_rn18_feature")
+                mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_rn18_feature", train=False)
                 cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
                 test_size = len(mil_cal_test_dataset) - cal_size
                 mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
