@@ -225,16 +225,32 @@ def build_subset_dataloader(args, train=True):
         assert args.batch_size == 1, print("Batch size must be 1.")
         num_classes = 2
         device = torch.device(f"cuda:{args.gpu}")
-        if train:
-            mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_features", train=True)
-            train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
-            return train_loader, None, num_classes
-        else:
-            mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_features", train=False)
+        if args.extract_feature_model == "resnet50":
+            if train:
+                mil_train_dataset = MILCamelyon16(device=device, path="./data/camelyon16_rn50_feature", train=True)
+                train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+                return train_loader, None, num_classes
+            else:
+                mil_cal_test_dataset = MILCamelyon16(device, path="./data/camelyon16_rn50_feature", train=False)
 
-            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-            test_size = len(mil_cal_test_dataset) - cal_size
-            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
-            cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
-            test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
-            return cal_loader, test_loader, num_classes
+                cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+                test_size = len(mil_cal_test_dataset) - cal_size
+                mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+                cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
+                test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
+                return cal_loader, test_loader, num_classes
+
+        elif args.extract_feature_model == "resnet18":
+            if train:
+                mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_rn18_feature")
+                train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True,
+                                              drop_last=True)
+                return train_loader, None, num_classes
+            else:
+                mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_rn18_feature")
+                cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+                test_size = len(mil_cal_test_dataset) - cal_size
+                mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+                cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
+                test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
+                return cal_loader, test_loader, num_classes
