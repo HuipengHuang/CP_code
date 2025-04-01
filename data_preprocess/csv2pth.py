@@ -91,7 +91,7 @@ def tcga_rn18_csv2pth(data_path, save_path):
         np_array = data_df.to_numpy()
         tensor_array = torch.from_numpy(np_array)
         torch.save(tensor_array, save_path + f"/test/data/data_{i}.pth")
-        train_writer.writerow([i, label])
+        test_writer.writerow([i, label])
 
 
 
