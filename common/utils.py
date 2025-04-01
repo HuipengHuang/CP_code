@@ -27,6 +27,7 @@ def save_exp_result(args, trainer, result_dict, path=None):
         if os.path.exists(save_path + f"{i}"):
             i += 1
             save_path = os.path.join(path, name+f"{i}")
+            print(f"save path{save_path}")
         else:
             break
 
