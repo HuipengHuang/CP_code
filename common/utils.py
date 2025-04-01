@@ -11,8 +11,6 @@ def set_seed(seed):
     torch.cuda.manual_seed(seed)
 
 
-
-
 def save_exp_result(args, trainer, result_dict, path=None):
     if path is None:
         path = f"./experiment/{args.algorithm}"
@@ -29,7 +27,7 @@ def save_exp_result(args, trainer, result_dict, path=None):
         else:
             break
 
-    os.makedirs(save_path, exist_ok=True)
+    os.makedirs(save_path + f"{i}", exist_ok=True)
     with open(os.path.join(save_path+f"{i}", "result.txt"), "w") as f:
         for key in result_dict.keys():
             f.write(f"{key}: {result_dict[key]}\n")
