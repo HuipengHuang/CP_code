@@ -49,6 +49,7 @@ def build_dataset(args):
         cal_test_dataset = mnist_bag.MnistBags(device, train=False)
 
     elif dataset_name == "camelyon16":
+        print("i am in 16")
         if args.multi_instance_learning != "True":
             raise ValueError("Please set multi-instance-learning to true.")
 
@@ -68,6 +69,7 @@ def build_dataset(args):
         return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
 
     elif dataset_name == "camelyon17":
+        print("I am in 17")
         if args.multi_instance_learning != "True":
             raise ValueError("Please set multi-instance-learning to true.")
 
