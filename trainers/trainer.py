@@ -58,6 +58,9 @@ class Trainer:
             logits = self.adapter(logits)
 
         loss = self.loss_function(logits, target)
+        print("---")
+        print(logits)
+        print(target)
         print(loss)
         self.optimizer.zero_grad()
         loss.backward()
