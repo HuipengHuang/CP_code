@@ -9,6 +9,28 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def initialize_weights(module):
+    for m in module.modules():
+        if isinstance(m, nn.Conv2d):
+            # ref from huggingface
+            nn.init.xavier_normal_(m.weight)
+            #nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            # ref from meituan
+            # fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            # fan_out //= m.groups
+            # m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
+            if m.bias is not None:
+                m.bias.data.zero_()
+        elif isinstance(m,nn.Linear):
+            # ref from clam
+            nn.init.xavier_normal_(m.weight)
+            if m.bias is not None:
+                m.bias.data.zero_()
+        elif isinstance(m,nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+
 class AttentionModel(nn.Module):
     def __init__(self, input_dim):
         super(AttentionModel, self).__init__()
@@ -30,7 +52,7 @@ class AttentionModel(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.M*self.ATTENTION_BRANCHES, 1),
+            nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
         )
 
     def forward(self, data):
@@ -47,7 +69,7 @@ class AttentionModel(nn.Module):
         Z = A.reshape(1, -1) @ H.squeeze(0) # ATTENTION_BRANCHESxM
 
         logits = self.classifier(Z)
-        return torch.cat((1 - logits, logits), dim=-1)
+        return logits
 
 
     def forward_with_batch(self, data):
@@ -101,8 +123,6 @@ class GatedAttentionModel(nn.Module):
         self.feature_extractor_part2 = nn.Sequential(
             nn.Linear(input_dim, self.M),
             nn.ReLU(),
-            nn.Linear(self.M, self.M),
-            nn.ReLU(),
         )
 
         self.attention_V = nn.Sequential(
@@ -121,6 +141,7 @@ class GatedAttentionModel(nn.Module):
             nn.Linear(self.M*self.ATTENTION_BRANCHES, 1),
         )
 
+        self.apply(initialize_weights)
     def forward(self, data):
         return self.forward_without_batch(data)
 
