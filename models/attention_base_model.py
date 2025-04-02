@@ -47,7 +47,7 @@ class AttentionModel(nn.Module):
         Z = A.reshape(1, -1) @ H.squeeze(0) # ATTENTION_BRANCHESxM
 
         logits = self.classifier(Z)
-        return logits
+        return torch.cat((1 - logits, logits), dim=-1)
 
 
     def forward_with_batch(self, data):
@@ -132,7 +132,7 @@ class GatedAttentionModel(nn.Module):
         A = F.softmax(A, dim=-1)  # softmax over K
         Z = A.reshape(1, -1) @ H.squeeze(0)  # ATTENTION_BRANCHESxM
         logits = self.classifier(Z)
-        return logits
+        return torch.cat((1 - logits, logits), dim=-1)
 
 """    def forward(self, data):
         if data.shape[0] == 1:
