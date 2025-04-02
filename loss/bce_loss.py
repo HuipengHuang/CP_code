@@ -6,5 +6,5 @@ class BinaryCrossEntropyLoss(BaseLoss):
         super().__init__()
     def forward(self, logit, target):
         prob = torch.sigmoid(logit)
-        loss = torch.mean(- (target * torch.log(prob) + (1 - target) * torch.log(1 - prob)))
+        loss = torch.mean(- (target * torch.log(prob[:, 1] + 1e-4) + (1 - target) * torch.log(1 - prob[:, 1] + 1e-4)))
         return loss
