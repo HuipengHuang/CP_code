@@ -125,7 +125,7 @@ def build_dataset(args):
         if args.extract_feature_model == "resnet18":
             save_path = "./data/tcga_rn18_feature"
             mil_train_dataset = TCGA_rn18(device=device, path=save_path, train=True)
-            mil_cal_test_dataset = TCGA_rn18(device, path=save_path+"/test", train=False)
+            mil_cal_test_dataset = TCGA_rn18(device, path=save_path, train=False)
 
             cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
             test_size = len(mil_cal_test_dataset) - cal_size
