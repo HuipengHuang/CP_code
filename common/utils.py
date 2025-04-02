@@ -20,22 +20,23 @@ def save_exp_result(args, trainer, result_dict, path=None):
     if args.multi_instance_learning == "True":
         path = f"{path}/mil"
         name = f"{args.extract_feature_model}_{name}"
-    save_path = os.path.join(path, name)
-    save_path = os.path.join(save_path, month_day)
+    save_path = os.path.join(path, month_day)
     save_path = os.path.join(save_path, args.test_score)
 
     i = 0
     while True:
-        if os.path.exists(save_path + f"{i}"):
+        if os.path.exists(os.path.join(save_path, f"{name}_{i}")):
             i += 1
         else:
             break
-
-    os.makedirs(save_path + f"{i}", exist_ok=True)
-    with open(os.path.join(save_path+f"{i}", "result.txt"), "w") as f:
+    folder_path = os.path.join(save_path, f"{name}_{i}")
+    os.makedirs(folder_path, exist_ok=True)
+    with open(os.path.join(folder_path, "result.txt"), "w") as f:
         for key in result_dict.keys():
             f.write(f"{key}: {result_dict[key]}\n")
+
         f.write("\nDetailed Setup \n")
+
         args_dict = vars(args)
         for k, v in args_dict.items():
             if v is not None:
