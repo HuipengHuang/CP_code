@@ -131,6 +131,8 @@ else:
         trainer.train(train_dataloader, args.epochs)
         trainer.predictor.calibrate(cal_dataloader)
         result_dict = trainer.predictor.evaluate(test_dataloader)
+        for key, value in result_dict.items():
+            print(f'{key}: {value}')
         if args.save == "True":
             save_exp_result(args, trainer, result_dict)
 
