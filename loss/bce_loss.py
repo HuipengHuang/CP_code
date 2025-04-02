@@ -4,7 +4,7 @@ from torch.nn import BCEWithLogitsLoss
 class BinaryCrossEntropyLoss(BaseLoss):
     def __init__(self):
         super().__init__()
-
     def forward(self, logit, target):
-        loss = BCEWithLogitsLoss()(logit, target)
+        prob = torch.sigmoid(logit)
+        loss = torch.mean(- (target * torch.log(prob) + (1 - target) * torch.log(1 - prob)))
         return loss
