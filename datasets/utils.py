@@ -59,8 +59,8 @@ def build_dataset(args):
 
         if args.extract_feature_model == "resnet18":
             save_path = "./data/camelyon16_rn18_feature"
-            mil_train_dataset = MILCamelyon16_rn18(device=device, path=save_path, train=True)
-            mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path, train=False)
+            mil_dataset = MILCamelyon16_rn18(device=device, path=save_path+"/train")
+            mil_cal_test_dataset = MILCamelyon16_rn18(device, path=save_path+"test")
 
             cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
             test_size = len(mil_cal_test_dataset) - cal_size
@@ -124,12 +124,13 @@ def build_dataset(args):
 
         if args.extract_feature_model == "resnet18":
             save_path = "./data/tcga_rn18_feature"
-            mil_train_dataset = TCGA_rn18(device=device, path=save_path, train=True)
-            mil_cal_test_dataset = TCGA_rn18(device, path=save_path, train=False)
+            mil_dataset = TCGA_rn18(device=device, path=save_path)
 
-            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-            test_size = len(mil_cal_test_dataset) - cal_size
-            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+            cal_size = int(len(mil_dataset) * 0.4 * args.cal_ratio)
+            test_size = int(len(mil_dataset) * 0.4 * (1 - args.cal_ratio))
+            train_size = len(mil_dataset) - test_size - cal_size
+            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset,
+                                                                                [train_size, cal_size, test_size])
             return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
         else:
             raise NotImplementedError
@@ -244,8 +245,6 @@ def build_subset_dataloader(args, train=True):
     dataset_name = args.dataset
     device = torch.device(f"cuda:{args.gpu}")
 
-
-
     if dataset_name == "camelyon16":
         assert args.multi_instance_learning == "True", print("Please set multi-instance-learning to true.")
 
@@ -268,36 +267,34 @@ def build_subset_dataloader(args, train=True):
 
         elif args.extract_feature_model == "resnet18":
             if train:
-                mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_rn18_feature", train=True)
+                mil_train_dataset = MILCamelyon16_rn18(device=device, path="./data/camelyon16_rn18_feature/train")
                 train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True,
                                               drop_last=True)
                 return train_loader, None, num_classes
             else:
-                mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_rn18_feature", train=False)
+                mil_cal_test_dataset = MILCamelyon16_rn18(device, path="./data/camelyon16_rn18_feature/test")
                 cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
                 test_size = len(mil_cal_test_dataset) - cal_size
                 mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
                 cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
                 test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
                 return cal_loader, test_loader, num_classes
-    elif dataset_name == "tcga_lung_cancer":
-        if args.save_feature:
-            csv2pth.tcga_rn18_csv2pth(data_path="./data/tcga_rn18_csv", save_path="./data/tcga_rn18_feature")
+    else:
+        raise NotImplementedError
 
-        if args.extract_feature_model == "resnet18":
-            num_classes = 2
-            if train:
-                mil_train_dataset = TCGA_rn18(device=device, path="./data/tcga_rn18_feature", train=True)
-                train_loader = DataLoader(mil_train_dataset, batch_size=args.batch_size, shuffle=True,
-                                              drop_last=True)
-                return train_loader, None, num_classes
-            else:
-                mil_cal_test_dataset = TCGA_rn18(device, path="./data/tcga_rn18_feature", train=False)
-                cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-                test_size = len(mil_cal_test_dataset) - cal_size
-                mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
-                cal_loader = DataLoader(mil_cal_dataset, batch_size=args.batch_size, shuffle=False)
-                test_loader = DataLoader(mil_test_dataset, batch_size=args.batch_size, shuffle=False)
-                return cal_loader, test_loader, num_classes
+def get_dataset_list(args):
+    device = torch.device(f"cuda:{args.gpu}")
+
+    if args.dataset == "tcga_lung_cancer":
+        num_classes = 2
+        save_path = "./data/tcga_rn18_feature"
+        mil_dataset = TCGA_rn18(device=device, path=save_path)
+        num_validation = args.cross_validation
+        set_size = int(len(mil_dataset) / num_validation)
+        final_set_size = len(mil_dataset) - set_size * (num_validation - 1)
+        size_list = [set_size for i in range(num_validation - 1)]
+        size_list.append(final_set_size)
+
+        return random_split(mil_dataset, size_list), num_classes
     else:
         raise NotImplementedError

@@ -6,15 +6,10 @@ from tqdm import tqdm
 
 
 class TCGA_rn18(Dataset):
-    def __init__(self, device, path, train):
+    def __init__(self, device, path):
         self.device = device
         self.data_list = []
         self.label_list = []
-
-        if train == True:
-            path = path + "/train/"
-        else:
-            path = path + "/test/"
         self.path = path
 
 

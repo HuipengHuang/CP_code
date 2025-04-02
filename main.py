@@ -1,7 +1,7 @@
 import argparse
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 from common.utils import set_seed, save_exp_result
-from datasets.utils import build_dataloader, build_subset_dataloader
+from datasets.utils import build_dataloader, build_subset_dataloader, get_dataset_list
 from trainers.utils import get_trainer
 import torch
 
@@ -25,6 +25,7 @@ parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 parser.add_argument("--save_result", default=None, choices=["True", "False"])
 parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
 parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
+parser.add_argument("--cross_validation", default=None, type=int)
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
@@ -84,51 +85,79 @@ args = parser.parse_args()
 seed = args.seed
 if seed:
     set_seed(seed)
-if args.save_memory == "True" and (args.algorithm == "cp" or args.algorithm == "uatr"):
-    train_loader, _, num_classes = build_subset_dataloader(args, train=True)
-    trainer = get_trainer(args, num_classes)
+if args.cross_validation is None:
+    if args.save_memory == "True" and (args.algorithm == "cp" or args.algorithm == "uatr"):
+        train_loader, _, num_classes = build_subset_dataloader(args, train=True)
+        trainer = get_trainer(args, num_classes)
 
-    trainer.train(train_loader, args.epochs)
+        trainer.train(train_loader, args.epochs)
 
-    if train_loader is not None:
-        if hasattr(train_loader, 'dataset') and train_loader.dataset is not None:
-            # Delete dataset tensors if they exist
-            if hasattr(train_loader.dataset, 'data'):
-                del train_loader.dataset.data
-            if hasattr(train_loader.dataset, 'targets'):
-                del train_loader.dataset.targets
-            del train_loader.dataset
-        del train_loader
-    torch.cuda.empty_cache()
+        if train_loader is not None:
+            if hasattr(train_loader, 'dataset') and train_loader.dataset is not None:
+                # Delete dataset tensors if they exist
+                if hasattr(train_loader.dataset, 'data'):
+                    del train_loader.dataset.data
+                if hasattr(train_loader.dataset, 'targets'):
+                    del train_loader.dataset.targets
+                del train_loader.dataset
+            del train_loader
+        torch.cuda.empty_cache()
 
-    cal_loader, test_loader, num_classes = build_subset_dataloader(args, train=False)
-    trainer.predictor.calibrate(cal_loader)
-    result_dict = trainer.predictor.evaluate(test_loader)
-    for key, value in result_dict.items():
-        print(f'{key}: {value}')
+        cal_loader, test_loader, num_classes = build_subset_dataloader(args, train=False)
+        trainer.predictor.calibrate(cal_loader)
+        result_dict = trainer.predictor.evaluate(test_loader)
+        for key, value in result_dict.items():
+            print(f'{key}: {value}')
+        if args.save == "True":
+            save_exp_result(args, trainer, result_dict)
 
-elif args.algorithm == "cp" or args.algorithm == "uatr":
-    train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
+    elif args.algorithm == "cp" or args.algorithm == "uatr":
+        train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
 
-    trainer = get_trainer(args, num_classes)
+        trainer = get_trainer(args, num_classes)
 
-    trainer.train(train_loader, args.epochs)
+        trainer.train(train_loader, args.epochs)
 
-    trainer.predictor.calibrate(cal_loader)
-    result_dict = trainer.predictor.evaluate(test_loader)
-    for key, value in result_dict.items():
-        print(f'{key}: {value}')
+        trainer.predictor.calibrate(cal_loader)
+        result_dict = trainer.predictor.evaluate(test_loader)
+        for key, value in result_dict.items():
+            print(f'{key}: {value}')
+        if args.save == "True":
+            save_exp_result(args, trainer, result_dict)
+
+    else:
+
+        train_loader, _, test_loader, num_classes = build_dataloader(args)
+        trainer = get_trainer(args, num_classes)
+
+        trainer.train(train_loader, args.epochs)
+        result_dict = trainer.predictor.evaluate(test_loader)
+        print(f"AUC: {trainer.predictor.compute_auc(test_loader)}")
+        for key, value in result_dict.items():
+            print(f'{key}: {value}')
+        if args.save == "True":
+            save_exp_result(args, trainer, result_dict)
 
 else:
+    num_validation = args.cross_validation
+    dataset_list, num_classes = get_dataset_list(args)
+    for i in range(num_validation):
+        if i != 0:
+            j = i - 1
+        else:
+            j = 1
+        test_dataset = dataset_list[i]
+        cal_dataset = dataset_list[j]
+        train_dataset = ConcatDataset([ dataset_list[i] for k in range(num_validation) if k != i and k != j])
+        train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+        cal_dataloader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-    train_loader, _, test_loader, num_classes = build_dataloader(args)
-    trainer = get_trainer(args, num_classes)
+        trainer = get_trainer(args, num_classes)
+        trainer.train(train_dataloader, args.epochs)
+        trainer.predictor.calibrate(cal_dataloader)
+        result_dict = trainer.predictor.evaluate(test_dataloader)
+        if args.save == "True":
+            save_exp_result(args, trainer, result_dict)
 
-    trainer.train(train_loader, args.epochs)
-    result_dict = trainer.predictor.evaluate(test_loader)
-    print(f"AUC: {trainer.predictor.compute_auc(test_loader)}")
-    for key, value in result_dict.items():
-        print(f'{key}: {value}')
 
-if args.save == "True":
-    save_exp_result(args, trainer, result_dict)
