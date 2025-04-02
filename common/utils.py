@@ -20,6 +20,9 @@ def save_exp_result(args, trainer, result_dict, path=None):
     if args.multi_instance_learning == "True":
         path = f"{path}/mil"
         name = f"{args.extract_feature_model}_{name}"
+        if args.cross_validate is not None:
+            name = f"{name}_cross_validation"
+
     save_path = os.path.join(path, month_day)
     save_path = os.path.join(save_path, args.test_score)
 
