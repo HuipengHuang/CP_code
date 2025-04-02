@@ -133,7 +133,6 @@ class GatedAttentionModel(nn.Module):
         Z = A.reshape(1, -1) @ H.squeeze(0)  # ATTENTION_BRANCHESxM
 
         logits = self.classifier(Z)
-        print(logits.shape)
         return logits
 
 """    def forward(self, data):
