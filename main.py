@@ -1,7 +1,7 @@
 import argparse
 from torch.utils.data import DataLoader, ConcatDataset
 from common.utils import set_seed, save_exp_result
-from datasets.utils import build_dataloader, build_subset_dataloader, get_dataset_list
+from datasets.utils import build_dataloader, get_dataset_list
 from trainers.utils import get_trainer
 import torch
 
@@ -20,7 +20,6 @@ parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp
                          "cp means use conformal prediction at evaluation stage. "
                          "Uncertainty aware training use uatr. Otherwise use standard")
 parser.add_argument("--final_activation_function",default="softmax", choices=["softmax", "sigmoid"])
-parser.add_argument("--save_memory", default=None, choices=["True", "False"])
 parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 parser.add_argument("--save_result", default=None, choices=["True", "False"])
 parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
@@ -86,32 +85,7 @@ seed = args.seed
 if seed:
     set_seed(seed)
 if args.cross_validation is None:
-    if args.save_memory == "True" and (args.algorithm == "cp" or args.algorithm == "uatr"):
-        train_loader, _, num_classes = build_subset_dataloader(args, train=True)
-        trainer = get_trainer(args, num_classes)
-
-        trainer.train(train_loader, args.epochs)
-
-        if train_loader is not None:
-            if hasattr(train_loader, 'dataset') and train_loader.dataset is not None:
-                # Delete dataset tensors if they exist
-                if hasattr(train_loader.dataset, 'data'):
-                    del train_loader.dataset.data
-                if hasattr(train_loader.dataset, 'targets'):
-                    del train_loader.dataset.targets
-                del train_loader.dataset
-            del train_loader
-        torch.cuda.empty_cache()
-
-        cal_loader, test_loader, num_classes = build_subset_dataloader(args, train=False)
-        trainer.predictor.calibrate(cal_loader)
-        result_dict = trainer.predictor.evaluate(test_loader)
-        for key, value in result_dict.items():
-            print(f'{key}: {value}')
-        if args.save == "True":
-            save_exp_result(args, trainer, result_dict)
-
-    elif args.algorithm == "cp" or args.algorithm == "uatr":
+    if args.algorithm == "cp" or args.algorithm == "uatr":
         train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
 
         trainer = get_trainer(args, num_classes)
