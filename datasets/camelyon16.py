@@ -92,7 +92,7 @@ class MILCamelyon16_rn18(Dataset):
 
 
 class MILCamelyon16_rn50(Dataset):
-    def __init__(self, device, path):
+    def __init__(self, device, path, train=True):
         self.device = device
         self.data_list = []
         self.label_list = []
@@ -102,16 +102,21 @@ class MILCamelyon16_rn50(Dataset):
                          names=['Slide_ID', 'Label', 'Subtype', 'Metastasis_Type'])
         df = df.set_index('Slide_ID')
         for filename in os.listdir(path):
-
-                # Load data and move to device
-                data = torch.load(os.path.join(path, filename)).to(self.device).to(torch.float32)
-                if "normal" in filename:
-                    label = 0
-                elif "tumor" in filename:
-                    label = 1
+                if train:
+                    if "normal" in filename:
+                        label = 0
+                    elif "tumor" in filename:
+                        label = 1
+                    else:
+                        continue
+                    data = torch.load(os.path.join(path, filename)).to(self.device).to(torch.float32)
                 else:
-                    file_name = filename.split('.')[0]
-                    label = 1 if df.loc[file_name]["Label"] == "Tumor" else 0
+                    if "test" in filename:
+                        file_name = filename.split('.')[0]
+                        label = 1 if df.loc[file_name]["Label"] == "Tumor" else 0
+                        data = torch.load(os.path.join(path, filename)).to(self.device).to(torch.float32)
+                    else:
+                        continue
                 label = torch.tensor(label, device=device)
 
                 self.data_list.append(data)

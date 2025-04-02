@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Subset, random_split
 from torch.utils.data import ConcatDataset
 import wilds
 from .camelyon17 import MILCamelyon17
-from .camelyon16 import MILCamelyon16, MILCamelyon16_rn18
+from .camelyon16 import MILCamelyon16, MILCamelyon16_rn18, MILCamelyon16_rn50
 from .tcga import TCGA_rn18
 import os
 from torchvision import models
@@ -67,13 +67,13 @@ def build_dataset(args):
             mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
 
         elif args.extract_feature_model == "resnet50":
-            save_path = "./data/camelyon16_rn50_feature"
-            mil_train_dataset = MILCamelyon16(device=device, path=save_path, train=True)
-            mil_cal_test_dataset = MILCamelyon16(device, path=save_path, train=False)
+            save_path = "./data/camelyon16_rn50_feature_new"
+            mil_dataset = MILCamelyon16_rn50(device=device, path=save_path)
 
-            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-            test_size = len(mil_cal_test_dataset) - cal_size
-            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+            cal_size = int(0.4 * args.cal_ratio * len(mil_dataset))
+            test_size = int(0.4 * (1 - args.cal_ratio) * len(mil_dataset))
+            train_size = len(mil_dataset) - cal_size - test_size
+            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset, [train_size, cal_size, test_size])
 
         else:
             raise NotImplementedError
