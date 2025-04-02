@@ -131,7 +131,7 @@ class GatedAttentionModel(nn.Module):
         A = torch.transpose(A, 1, 0)  # ATTENTION_BRANCHESxK
         A = F.softmax(A, dim=-1)  # softmax over K
         Z = A.reshape(1, -1) @ H.squeeze(0)  # ATTENTION_BRANCHESxM
-        Z = nn.GELU(Z)
+        Z = torch.relu(Z)
         logits = self.classifier(Z)
         return logits
 
