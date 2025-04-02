@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import random
 import os
-
+import datetime
 
 def set_seed(seed):
     np.random.seed(seed)
@@ -12,13 +12,17 @@ def set_seed(seed):
 
 
 def save_exp_result(args, trainer, result_dict, path=None):
+    current_time = datetime.datetime.now()
+    month_day = current_time.strftime("%b%d")
     if path is None:
         path = f"./experiment/{args.algorithm}"
-    name = f"{args.dataset}_{args.model}_{args.test_score}_{args.loss}loss"
+    name = f"{args.dataset}_{args.model}_{args.loss}loss"
     if args.multi_instance_learning == "True":
         path = f"{path}/mil"
         name = f"{args.extract_feature_model}_{name}"
     save_path = os.path.join(path, name)
+    save_path = os.path.join(save_path, month_day)
+    save_path = os.path.join(save_path, args.test_score)
 
     i = 0
     while True:
