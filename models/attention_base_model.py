@@ -98,9 +98,10 @@ class GatedAttentionModel(nn.Module):
         self.L = 128
         self.ATTENTION_BRANCHES = 1
 
-
         self.feature_extractor_part2 = nn.Sequential(
             nn.Linear(input_dim, self.M),
+            nn.ReLU(),
+            nn.Linear(self.M, self.M),
             nn.ReLU(),
         )
 
