@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from nystrom_attention import NystromAttention
-import torchvision.models as models
+from .utils import initialize_weights
 from .embed_position import PPEG
+
+
 
 class TransLayer(nn.Module):
 
@@ -42,7 +44,7 @@ class TransMIL(nn.Module):
         self.norm = nn.LayerNorm(512).to(device)
         self._fc2 = nn.Linear(512, self.n_classes).to(device)
         self.device = device
-
+        initialize_weights(self)
     def forward(self, h):
         h = h.to(self.device)
         h = self._fc1(h)  # [B, n, 512]
@@ -61,7 +63,7 @@ class TransMIL(nn.Module):
         h = self.layer1(h)  # [B, N, 512]
 
         # ---->PPEG
-        h = self.pos_layer(h)  # [B, N, 512]
+        h = self.pos_layer(h, _H, _W)  # [B, N, 512]
 
         # ---->Translayer x2
         h = self.layer2(h)  # [B, N, 512]

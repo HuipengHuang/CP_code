@@ -7,27 +7,18 @@ import einops
 class PPEG(nn.Module):
     def __init__(self, dim=512):
         super(PPEG, self).__init__()
-        self.proj = nn.Conv2d(dim, dim, 7, 1, 7 // 2, groups=dim)
-        self.proj1 = nn.Conv2d(dim, dim, 5, 1, 5 // 2, groups=dim)
-        self.proj2 = nn.Conv2d(dim, dim, 3, 1, 3 // 2, groups=dim)
+        self.proj = nn.Conv2d(dim, dim, 7, 1, 7//2, groups=dim)
+        self.proj1 = nn.Conv2d(dim, dim, 5, 1, 5//2, groups=dim)
+        self.proj2 = nn.Conv2d(dim, dim, 3, 1, 3//2, groups=dim)
 
-    def forward(self, x):
-        """class token should be appended at the beginning of x before input to forward function"""
+    def forward(self, x, H, W):
+        B, _, C = x.shape
         cls_token, feat_token = x[:, 0], x[:, 1:]
-
-        B, N, C = feat_token.shape
-        #N-1 because
-        H, W = int(np.ceil(np.sqrt(N))), int(np.ceil(np.sqrt(N)))
-
-        add_length = H * W - N
-        feat_token = torch.cat((feat_token, feat_token[:, :add_length, :]), dim=1)
-
         cnn_feat = feat_token.transpose(1, 2).view(B, C, H, W)
-        feat = self.proj(cnn_feat) + cnn_feat + self.proj1(cnn_feat) + self.proj2(cnn_feat)
-        feat = feat.flatten(2).transpose(1, 2)
-
-        out = torch.cat((cls_token.unsqueeze(1), feat), dim=1)
-        return out
+        x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
+        x = x.flatten(2).transpose(1, 2)
+        x = torch.cat((cls_token.unsqueeze(1), x), dim=1)
+        return x
 
 class EPEG(nn.Module):
     def __init__(self, d_model=512, n_head=8, dropout=0.1, conv_kernel_size=7):

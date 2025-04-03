@@ -6,7 +6,7 @@ import math
 
 from einops import rearrange, reduce
 from timm.models.layers import DropPath
-
+from .utils import initialize_weights
 
 # --------------------------------------------------------
 # Modified by Swin@Microsoft
@@ -32,23 +32,6 @@ def moore_penrose_iter_pinv(x, iters=6):
         z = 0.25 * z @ (13 * I - (xz @ (15 * I - (xz @ (7 * I - xz)))))
 
     return z
-
-
-def initialize_weights(module):
-    for m in module.modules():
-        if isinstance(m, nn.Conv2d):
-            # ref from huggingface
-            nn.init.xavier_normal_(m.weight)
-            if m.bias is not None:
-                m.bias.data.zero_()
-        elif isinstance(m, nn.Linear):
-            # ref from clam
-            nn.init.xavier_normal_(m.weight)
-            if m.bias is not None:
-                m.bias.data.zero_()
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.constant_(m.bias, 0)
-            nn.init.constant_(m.weight, 1.0)
 
 
 class Mlp(nn.Module):
