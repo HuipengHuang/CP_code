@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from base_loss import BaseLoss
+from .base_loss import BaseLoss
 
 
 class DSMilLoss(BaseLoss):
