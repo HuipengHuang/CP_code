@@ -54,6 +54,7 @@ class BClassifier(nn.Module):
 
     def forward(self, feats, c):  # N x K, N x C
         feats = feats.squeeze(0)
+        print(feats.shape)
         device = feats.device
         V = self.v(feats)  # N x V, unsorted
         Q = self.q(feats).view(feats.shape[0], -1)  # N x Q, unsorted
