@@ -31,7 +31,7 @@ class MilPredictor:
 
 
 
-    def calibrate(self, cal_loader, alpha):
+    def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
              Compute scores for all the calibration data and take the (1 - alpha) quantile."""
         with torch.no_grad():
