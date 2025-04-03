@@ -16,10 +16,7 @@ class DSMilLoss(BaseLoss):
     def forward(self, input_list, target):
         ins_prediction, bag_prediction, _, _ = input_list
         max_prediction, _ = torch.max(ins_prediction, 0)
-        print(bag_prediction.shape)
-        print(max_prediction.shape)
-        print("haha")
-        bag_loss = self.criterion(bag_prediction.view(1, -1), target.view(1, -1))
-        max_loss = self.criterion(max_prediction.view(1, -1), target.view(1, -1))
+        bag_loss = self.criterion(bag_prediction.view(1, -1), target.view(-1))
+        max_loss = self.criterion(max_prediction.view(1, -1), target.view(-1))
         loss = 0.5 * bag_loss + 0.5 * max_loss
         return loss
