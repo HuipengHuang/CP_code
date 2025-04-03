@@ -3,8 +3,7 @@ from .contr_loss import ConftrLoss
 from .uncertainty_aware_loss import UncertaintyAwareLoss
 from .cadapter_loss import CAdapterLoss
 from .standard_loss import StandardLoss
-from dsmil_loss import DSMilLoss
-import torch.nn as nn
+from .dsmil_loss import DSMilLoss
 
 
 def get_loss_function(args, predictor):
