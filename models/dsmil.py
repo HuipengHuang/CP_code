@@ -53,8 +53,6 @@ class BClassifier(nn.Module):
         self.fcc = nn.Conv1d(output_class, output_class, kernel_size=input_size)
 
     def forward(self, feats, c):  # N x K, N x C
-        feats = feats.squeeze(0)
-        print(feats.shape)
         device = feats.device
         V = self.v(feats)  # N x V, unsorted
         Q = self.q(feats).view(feats.shape[0], -1)  # N x Q, unsorted
@@ -84,6 +82,8 @@ class MILNet(nn.Module):
         self.b_classifier = b_classifier
         self.apply(initialize_weights)
     def forward(self, x):
+        x = x.squeeze(0)
+        print(x.shape)
         feats, classes = self.i_classifier(x)
         prediction_bag, A, B = self.b_classifier(feats, classes)
 

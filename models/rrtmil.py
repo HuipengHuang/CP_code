@@ -5,7 +5,7 @@ import numpy as np
 import math
 
 from einops import rearrange, reduce
-from timm.models.layers import DropPath
+from timm.layers import DropPath
 from .utils import initialize_weights
 
 # --------------------------------------------------------
