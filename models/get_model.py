@@ -40,7 +40,7 @@ def build_model(args, num_classes=None):
     pretrained = (args.pretrained == "True")
     net = None
 
-    if args.mil:
+    if args.multi_instance_learning:
         net = build_mil_model(args, num_classes)
         return net.to(device)
 
