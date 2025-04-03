@@ -53,6 +53,7 @@ class BClassifier(nn.Module):
         self.fcc = nn.Conv1d(output_class, output_class, kernel_size=input_size)
 
     def forward(self, feats, c):  # N x K, N x C
+        feats = feats.unsqueeze(0)
         device = feats.device
         V = self.v(feats)  # N x V, unsorted
         Q = self.q(feats).view(feats.shape[0], -1)  # N x Q, unsorted
