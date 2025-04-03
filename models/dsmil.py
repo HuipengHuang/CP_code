@@ -83,7 +83,6 @@ class MILNet(nn.Module):
         self.apply(initialize_weights)
     def forward(self, x):
         x = x.squeeze(0)
-        print(x.shape)
         feats, classes = self.i_classifier(x)
         prediction_bag, A, B = self.b_classifier(feats, classes)
 
