@@ -13,7 +13,7 @@ class Trainer:
     All the arguments are passed through args."""
     def __init__(self, args, num_classes):
         self.device = torch.device(f"cuda:{args.gpu}")
-        self.net = models.utils.build_model(args, num_classes=num_classes)
+        self.net = models.get_model.build_model(args, num_classes=num_classes)
         self.batch_size = args.batch_size
         if args.optimizer == 'sgd':
             self.optimizer = torch.optim.SGD(self.net.parameters(), lr=args.learning_rate, momentum=args.momentum,
@@ -35,7 +35,7 @@ class Trainer:
                                                  adapter=self.adapter,
                                                  final_activation_function=final_activation_function)
         elif args.adapter == "True":
-            input_feature = models.utils.get_model_output_dim(args, self.net)
+            input_feature = models.get_model.get_model_output_dim(args, self.net)
             self.adapter = Adapter(input_feature, num_classes, self.device)
             self.set_train_mode((args.train_net == "True"), (args.train_adapter == "True"))
             self.predictor = predictor.Predictor(args, self.net, num_classes=num_classes,
