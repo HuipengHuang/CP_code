@@ -2,7 +2,7 @@ import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 import models
-from predictors import predictor
+from predictors.utils import get_predictor
 from loss.utils import get_loss_function
 from .cadapter import CAdapter, Adapter
 from .early_stoping import EarlyStopping
@@ -31,19 +31,20 @@ class Trainer:
         if args.cadapter == "True":
             self.adapter = CAdapter(num_classes, num_classes, self.device)
             self.set_train_mode((args.train_net == "True"), (args.train_adapter == "True"))
-            self.predictor = predictor.Predictor(args, self.net, num_classes=num_classes,
+            self.predictor = get_predictor(args, self.net, num_classes=num_classes,
                                                  adapter=self.adapter,
                                                  final_activation_function=final_activation_function)
+
         elif args.adapter == "True":
             input_feature = models.get_model.get_model_output_dim(args, self.net)
             self.adapter = Adapter(input_feature, num_classes, self.device)
             self.set_train_mode((args.train_net == "True"), (args.train_adapter == "True"))
-            self.predictor = predictor.Predictor(args, self.net, num_classes=num_classes,
+            self.predictor = get_predictor(args, self.net, num_classes=num_classes,
                                                  adapter=self.adapter,
                                                  final_activation_function=final_activation_function)
         else:
             self.adapter = None
-            self.predictor = predictor.Predictor(args, self.net, num_classes,
+            self.predictor = get_predictor(args, self.net, num_classes,
                                                  final_activation_function=final_activation_function)
         self.predictor.set_mode("train")
         self.num_classes = num_classes

@@ -26,9 +26,9 @@ def build_mil_model(args, num_classes):
 
     elif model_type == "dsmil":
         i_classifier = dsmil.FCLayer(in_size=args.input_dim, out_size=args.num_classes).to(device)
-        b_classifier = dsmil.BClassifier(input_size=args.L, mDim=args.mDim, output_class=args.num_classes,
+        b_classifier = dsmil.BClassifier(input_size=args.input_dim, mDim=args.input_dim, output_class=args.num_classes,
                                        passing_v=False).to(device)
-        milnet = dsmil.MILNet(i_classifier, b_classifier).to(device)
+        net = dsmil.MILNet(i_classifier, b_classifier).to(device)
 
     elif net is None:
         raise ValueError(f"Unsupported model type: {model_type}")

@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader, ConcatDataset
 from common.utils import set_seed, save_exp_result
 from datasets.utils import build_dataloader, get_dataset_list
 from trainers.utils import get_trainer
-import torch
 
 parser = argparse.ArgumentParser()
 
