@@ -25,7 +25,7 @@ def build_mil_model(args, num_classes):
         net = rrtmil.RRT(input_dim=args.input_dimension)
 
     elif model_type == "dsmil":
-        i_classifier = dsmil.FCLayer(in_size=args.input_dimension, out_size=args.num_classes).to(device)
+        i_classifier = dsmil.FCLayer(in_size=args.input_dimension, out_size=num_classes).to(device)
         b_classifier = dsmil.BClassifier(input_size=args.input_dim, mDim=args.input_dim, output_class=args.num_classes,
                                        passing_v=False).to(device)
         net = dsmil.MILNet(i_classifier, b_classifier).to(device)
