@@ -95,10 +95,10 @@ class MilPredictor:
             for data, target in test_loader:
                 data, target = data.to(self.device), target.to(self.device)
 
-                if self.args.model == "dsmil":
-                    logit = self.net(data)[1]
-
                 logit = self.net(data)
+                if self.args.model == "dsmil":
+                    logit = logit[1]
+
                 prob = self.final_activation_function(logit)
 
                 prediction = torch.argmax(prob, dim=-1)
