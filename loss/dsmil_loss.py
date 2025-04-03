@@ -7,7 +7,7 @@ class DSMilLoss(BaseLoss):
     def __init__(self, loss_function="standard"):
         super().__init__()
         if loss_function == "standard":
-            self.loss_function = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss()
         elif loss_function == "bce":
             self.criterion = torch.nn.BCEWithLogitsLoss(reduction='mean')
         else:
