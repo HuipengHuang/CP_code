@@ -68,12 +68,12 @@ def build_dataset(args):
 
         elif args.extract_feature_model == "resnet50":
             save_path = "./data/camelyon16_rn50_feature_new_new"
-            mil_dataset = MILCamelyon16_rn50(device=device, path=save_path)
+            mil_train_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=True)
+            mil_cal_test_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=False)
 
-            cal_size = int(0.4 * args.cal_ratio * len(mil_dataset))
-            test_size = int(0.4 * (1 - args.cal_ratio) * len(mil_dataset))
-            train_size = len(mil_dataset) - cal_size - test_size
-            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset, [train_size, cal_size, test_size])
+            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
+            test_size = len(mil_cal_test_dataset) - cal_size
+            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
 
         else:
             raise NotImplementedError
@@ -158,7 +158,7 @@ def build_dataset(args):
 
 def build_dataloader(args):
     train_dataset, cal_dataset, test_dataset, num_classes = build_dataset(args)
-    print(len(test_dataset))
+
     if args.dataset == "camelyon17":
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
