@@ -158,6 +158,7 @@ def build_dataset(args):
 
 def build_dataloader(args):
     train_dataset, cal_dataset, test_dataset, num_classes = build_dataset(args)
+    print(len(test_dataset))
     if args.dataset == "camelyon17":
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
