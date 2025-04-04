@@ -91,7 +91,48 @@ class MILCamelyon16_rn18(Dataset):
         return data, label
 
 
+
+
+
 class MILCamelyon16_rn50(Dataset):
+    def __init__(self, device, path, train=True):
+        self.device = device
+        self.data_list = []
+        self.label_list = []
+        self.path = path
+
+        df = pd.read_csv(f"{path}/label.csv", header=None, index_col=0)
+        for filename in df.index:
+                if train:
+                    if "normal" in filename:
+                        label = 0
+                    elif "tumor" in filename:
+                        label = 1
+                    else:
+                        continue
+                    data = torch.load(os.path.join(f"{path}/pt", f"{filename}.pt")).to(self.device).to(torch.float32)
+                else:
+                    if "test" in filename:
+                        label = df.loc[filename, 1]
+                        data = torch.load(os.path.join(f"{path}/pt", f"{filename}.pt")).to(self.device).to(torch.float32)
+                    else:
+                        continue
+                label = torch.tensor(label, device=device)
+
+                self.data_list.append(data)
+                self.label_list.append(label)
+
+    def __len__(self):
+        return len(self.label_list)  # Use label_list, not label
+
+    def __getitem__(self, idx):
+        data = self.data_list[idx]
+        label = self.label_list[idx]
+        return data, label
+
+
+
+"""class MILCamelyon16_rn50(Dataset):
     def __init__(self, device, path, train=True):
         self.device = device
         self.data_list = []
@@ -128,5 +169,4 @@ class MILCamelyon16_rn50(Dataset):
     def __getitem__(self, idx):
         data = self.data_list[idx]
         label = self.label_list[idx]
-        return data, label
-
+        return data, label"""
