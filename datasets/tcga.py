@@ -64,6 +64,7 @@ class TCGA_rn50(Dataset):
             id = file_name_list[0] + "-" + file_name_list[1] + "-" + file_name_list[2]
 
             label = df.loc[id, "label"]
+            laber = 0 if label == "LUAD" else 1
             data = torch.load(os.path.join(f"{path}/pt_files", f"{filename}")).to(self.device).to(torch.float32)
             label = torch.tensor(label, device=device)
 
