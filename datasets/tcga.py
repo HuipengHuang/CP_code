@@ -65,16 +65,16 @@ class TCGA_rn50(Dataset):
 
             label = df.loc[id, "label"]
             label = 0 if label == "LUAD" else 1
-            data = torch.load(os.path.join(f"{path}/pt_files", f"{filename}")).to(self.device).to(torch.float32)
+            data_path = os.path.join(f"{path}/pt_files", f"{filename}")
             label = torch.tensor(label, device=device)
 
-            self.data_list.append(data)
+            self.data_list.append(data_path)
             self.label_list.append(label)
 
     def __len__(self):
         return len(self.label_list)  # Use label_list, not label
 
     def __getitem__(self, idx):
-        data = self.data_list[idx]
+        data = torch.load(self.data_list[idx], device=self.device)
         label = self.label_list[idx]
         return data, label
