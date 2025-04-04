@@ -7,7 +7,7 @@ from torch.utils.data import ConcatDataset
 import wilds
 from .camelyon17 import MILCamelyon17
 from .camelyon16 import MILCamelyon16, MILCamelyon16_rn18, MILCamelyon16_rn50
-from .tcga import TCGA_rn18
+from .tcga import TCGA_rn18, TCGA_rn50
 import os
 from torchvision import models
 from data_preprocess import csv2pth
@@ -132,6 +132,16 @@ def build_dataset(args):
             mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset,
                                                                                 [train_size, cal_size, test_size])
             return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
+        elif args.extract_feature_model == "resnet50":
+            save_path = "./data/tcga_rn50_feature"
+            mil_dataset = TCGA_rn50(device=device, path=save_path)
+
+            cal_size = int(len(mil_dataset) * 0.4 * args.cal_ratio)
+            test_size = int(len(mil_dataset) * 0.4 * (1 - args.cal_ratio))
+            train_size = len(mil_dataset) - test_size - cal_size
+            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset,
+                                                                                [train_size, cal_size, test_size])
+            return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
         else:
             raise NotImplementedError
 
@@ -244,15 +254,27 @@ def get_dataset_list(args):
     device = torch.device(f"cuda:{args.gpu}")
 
     if args.dataset == "tcga_lung_cancer":
-        num_classes = 2
-        save_path = "./data/tcga_rn18_feature"
-        mil_dataset = TCGA_rn18(device=device, path=save_path)
-        num_validation = args.cross_validation
-        set_size = int(len(mil_dataset) / num_validation)
-        final_set_size = len(mil_dataset) - set_size * (num_validation - 1)
-        size_list = [set_size for i in range(num_validation - 1)]
-        size_list.append(final_set_size)
-
+        if args.extract_feature_model == "resnet18":
+            num_classes = 2
+            save_path = "./data/tcga_rn18_feature"
+            mil_dataset = TCGA_rn18(device=device, path=save_path)
+            num_validation = args.cross_validation
+            set_size = int(len(mil_dataset) / num_validation)
+            final_set_size = len(mil_dataset) - set_size * (num_validation - 1)
+            size_list = [set_size for i in range(num_validation - 1)]
+            size_list.append(final_set_size)
+        elif args.extract_feature_model == "resnet50":
+            num_classes = 2
+            save_path = "./data/tcga_rn50_feature"
+            mil_dataset = TCGA_rn50(device=device, path=save_path)
+            num_validation = args.cross_validation
+            set_size = int(len(mil_dataset) / num_validation)
+            final_set_size = len(mil_dataset) - set_size * (num_validation - 1)
+            size_list = [set_size for i in range(num_validation - 1)]
+            size_list.append(final_set_size)
+        else:
+            raise NotImplementedError
         return random_split(mil_dataset, size_list), num_classes
+
     else:
         raise NotImplementedError

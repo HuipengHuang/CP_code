@@ -1,5 +1,7 @@
 import csv
 import os
+
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -36,6 +38,35 @@ class TCGA_rn18(Dataset):
 
                 self.data_list.append(data)
                 self.label_list.append(label)
+
+    def __len__(self):
+        return len(self.label_list)  # Use label_list, not label
+
+    def __getitem__(self, idx):
+        data = self.data_list[idx]
+        label = self.label_list[idx]
+        return data, label
+
+
+class TCGA_rn50(Dataset):
+    def __init__(self, device, path):
+        self.device = device
+        self.data_list = []
+        self.label_list = []
+        self.path = path
+
+        df = pd.read_csv(f"{path}/label.csv", header=None, index_col=0)
+        df.rename(columns={df.columns[0]: "label"}, inplace=True)
+        for filename in os.listdir(f"{path}/pt_files"):
+            #get rid of .pt
+            file_name = filename.split(".")[0]
+
+            label = df.loc[file_name, "label"]
+            data = torch.load(os.path.join(f"{path}/pt_files", f"{filename}.pt")).to(self.device).to(torch.float32)
+            label = torch.tensor(label, device=device)
+
+            self.data_list.append(data)
+            self.label_list.append(label)
 
     def __len__(self):
         return len(self.label_list)  # Use label_list, not label
