@@ -75,6 +75,6 @@ class TCGA_rn50(Dataset):
         return len(self.label_list)  # Use label_list, not label
 
     def __getitem__(self, idx):
-        data = torch.load(self.data_list[idx], device=self.device)
+        data = torch.load(self.data_list[idx]).to(self.device)
         label = self.label_list[idx]
         return data, label
