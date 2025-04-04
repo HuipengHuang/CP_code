@@ -60,9 +60,11 @@ class TCGA_rn50(Dataset):
         for filename in os.listdir(f"{path}/pt_files"):
             #get rid of .pt
             file_name = filename.split(".")[0]
+            file_name_list = file_name.split("-")
+            id = file_name_list[0] + "-" + file_name_list[1] + "-" + file_name_list[2]
 
-            label = df.loc[file_name, "label"]
-            data = torch.load(os.path.join(f"{path}/pt_files", f"{filename}.pt")).to(self.device).to(torch.float32)
+            label = df.loc[id, "label"]
+            data = torch.load(os.path.join(f"{path}/pt_files", f"{filename}")).to(self.device).to(torch.float32)
             label = torch.tensor(label, device=device)
 
             self.data_list.append(data)
