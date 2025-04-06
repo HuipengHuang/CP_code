@@ -15,7 +15,7 @@ class PPEG(nn.Module):
         B, _, C = x.shape
         cls_token, feat_token = x[:, 0], x[:, 1:]
         cnn_feat = feat_token.transpose(1, 2).view(B, C, H, W)
-        x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
+        x = self.proj(cnn_feat) + cnn_feat + self.proj1(cnn_feat) + self.proj2(cnn_feat)
         x = x.flatten(2).transpose(1, 2)
         x = torch.cat((cls_token.unsqueeze(1), x), dim=1)
         return x

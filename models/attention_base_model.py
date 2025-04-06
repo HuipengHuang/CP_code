@@ -119,7 +119,7 @@ class GatedAttentionModel(nn.Module):
         self.attention_w = nn.Linear(self.L, self.ATTENTION_BRANCHES) # matrix w (or vector w if self.ATTENTION_BRANCHES==1)
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.M*self.ATTENTION_BRANCHES, 1),
+            nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
         )
 
         self.apply(initialize_weights)
@@ -135,7 +135,7 @@ class GatedAttentionModel(nn.Module):
         A = F.softmax(A, dim=-1)  # softmax over K
         Z = A.reshape(1, -1) @ H.squeeze(0)  # ATTENTION_BRANCHESxM
         logits = self.classifier(Z)
-        return torch.cat((1 - logits, logits), dim=-1)
+        return logits
 
 """    def forward(self, data):
         if data.shape[0] == 1:
