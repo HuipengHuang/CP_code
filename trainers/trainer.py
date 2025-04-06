@@ -69,19 +69,19 @@ class Trainer:
         return loss
 
     def train_epoch(self, train_loader):
-        for data, target in train_loader:
+        for data, target in tqdm(train_loader):
             self.train_batch(data, target)
 
     def train(self, train_loader, epochs, val_loader=None):
         self.net.train()
         if val_loader is None or self.early_stopping is None:
-            for epoch in tqdm(range(epochs)):
+            for epoch in range(epochs):
                 self.train_epoch(train_loader)
 
                 if self.scheduler:
                     self.scheduler.step()
         else:
-            for epoch in tqdm(range(epochs)):
+            for epoch in range(epochs):
                 self.train_epoch(train_loader)
 
                 val_loss = self.compute_validation_loss(val_loader)
