@@ -74,7 +74,15 @@ def build_dataset(args):
             cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
             test_size = len(mil_cal_test_dataset) - cal_size
             mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
-
+        elif args.extract_feature_model == "test":
+            save_path = "./data/camelyon16_rn50_feature_new_new"
+            mil_train_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=True)
+            mil_cal_test_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=False)
+            mil_dataset = ConcatDataset([mil_train_dataset, mil_cal_test_dataset])
+            cal_size = int(0.2 * len(mil_dataset))
+            test_size =  cal_size
+            train_size = len(mil_dataset) - test_size - cal_size
+            mil_cal_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset, [train_size, cal_size, test_size])
         else:
             raise NotImplementedError
         return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
