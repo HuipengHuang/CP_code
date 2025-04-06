@@ -74,8 +74,7 @@ class Trainer:
 
     def train(self, train_loader, epochs, val_loader=None):
         self.net.train()
-        if val_loader is None:
-            assert self.early_stopping is None, print("Attention. Early Stopping is not working as val_loader is None.")
+        if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
                 self.train_epoch(train_loader)
 
