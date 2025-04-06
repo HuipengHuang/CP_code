@@ -24,6 +24,7 @@ parser.add_argument("--save_result", default=None, choices=["True", "False"])
 parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
 parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
 parser.add_argument("--cross_validation", default=None, type=int)
+parser.add_argument("--patience", default=None, type=int)
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
@@ -89,7 +90,7 @@ if args.cross_validation is None:
 
         trainer = get_trainer(args, num_classes)
 
-        trainer.train(train_loader, args.epochs)
+        trainer.train(train_loader, args.epochs, val_loader=cal_loader)
 
         trainer.predictor.calibrate(cal_loader)
         result_dict = trainer.predictor.evaluate(test_loader)

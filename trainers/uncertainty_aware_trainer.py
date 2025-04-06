@@ -15,10 +15,10 @@ class UncertaintyAwareTrainer(Trainer):
         super().__init__(args, num_classes)
 
     @overrides
-    def train(self, data_loader, epochs):
+    def train(self, train_loader, epochs, val_loader=None):
         """This method is modified because
          uncertainty-aware training requires randomly split the training data into two disjoint set."""
-        pred_set, calibrate_set = utils.split_dataloader(data_loader, 0.5)
+        pred_set, calibrate_set = utils.split_dataloader(train_loader, 0.5)
         self.net.train()
         if self.adapter is None:
             for epoch in range(epochs):
