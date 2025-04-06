@@ -5,7 +5,7 @@ import models
 from predictors.utils import get_predictor
 from loss.utils import get_loss_function
 from .cadapter import CAdapter, Adapter
-from .early_stoping import EarlyStopping
+from .early_stopping import EarlyStopping
 
 class Trainer:
     """
@@ -49,6 +49,10 @@ class Trainer:
         self.predictor.set_mode("train")
         self.num_classes = num_classes
         self.loss_function = get_loss_function(args, self.predictor)
+        if args.patience:
+            self.early_stopping = EarlyStopping(patience=args.patience)
+        else:
+            self.early_stopping = None
 
     def train_batch(self, data, target):
         data = data.to(self.device)
@@ -62,16 +66,39 @@ class Trainer:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        return loss
 
-    def train(self, data_loader, epochs):
+    def train_epoch(self, train_loader):
+        for data, target in train_loader:
+            self.train_batch(data, target)
+
+    def train(self, train_loader, epochs, val_loader=None):
         self.net.train()
-        for epoch in range(epochs):
-            for data, target in tqdm(data_loader, desc=f"Epoch: {epoch+1} / {epochs}"):
-                self.train_batch(data, target)
+        if val_loader is None:
+            assert self.early_stopping is None, print("Attention. Early Stopping is not working as val_loader is None.")
+            for epoch in range(epochs):
+                self.train_epoch(train_loader)
 
-            if self.scheduler:
-                self.scheduler.step()
+                if self.scheduler:
+                    self.scheduler.step()
+        else:
+            for epoch in range(epochs):
+                self.train_epoch(train_loader)
 
+                val_loss = self.compute_validation_loss(val_loader)
+                stop = self.early_stopping(val_loss, epoch)
+                if stop:
+                    break
+                if self.scheduler:
+                    self.scheduler.step()
+
+    def compute_validation_loss(self, val_loader):
+        loss = 0
+        for data, target in val_loader:
+            data, target = data.to(self.device), target.to(self.device)
+            logits = self.net(data)
+            loss += self.loss_function(logits, target).item()
+        return loss / len(val_loader)
 
     def set_train_mode(self, train_net, train_adapter):
         assert self.adapter is not None, print("The trainer does not have an adapter.")
