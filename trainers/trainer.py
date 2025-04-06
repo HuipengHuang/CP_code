@@ -72,14 +72,14 @@ class Trainer:
         self.net.train()
         if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
-                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch} / {epochs}"):
+                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch + 1} / {epochs}"):
                     self.train_batch(data, target)
 
                 if self.scheduler:
                     self.scheduler.step()
         else:
             for epoch in range(epochs):
-                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch} / {epochs}"):
+                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch + 1} / {epochs}"):
                     self.train_batch(data, target)
 
                 val_loss = self.compute_validation_loss(val_loader)
