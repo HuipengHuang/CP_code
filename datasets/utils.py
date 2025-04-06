@@ -83,6 +83,7 @@ def build_dataset(args):
             test_size =  cal_size
             train_size = len(mil_dataset) - test_size - cal_size
             mil_cal_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset, [train_size, cal_size, test_size])
+            print(train_size, test_size)
         else:
             raise NotImplementedError
         return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
