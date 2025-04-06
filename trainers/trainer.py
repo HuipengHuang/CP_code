@@ -68,21 +68,19 @@ class Trainer:
         self.optimizer.step()
         return loss
 
-    def train_epoch(self, train_loader):
-        for data, target in tqdm(train_loader):
-            self.train_batch(data, target)
-
     def train(self, train_loader, epochs, val_loader=None):
         self.net.train()
         if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
-                self.train_epoch(train_loader)
+                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch} / {epochs}"):
+                    self.train_batch(data, target)
 
                 if self.scheduler:
                     self.scheduler.step()
         else:
             for epoch in range(epochs):
-                self.train_epoch(train_loader)
+                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch} / {epochs}"):
+                    self.train_batch(data, target)
 
                 val_loss = self.compute_validation_loss(val_loader)
                 stop = self.early_stopping(val_loss, epoch)
