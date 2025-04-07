@@ -84,6 +84,18 @@ class Trainer:
 
                 val_loss = self.compute_validation_loss(val_loader)
                 stop = self.early_stopping(val_loss, epoch)
+
+                total_accuracy = 0
+                for data, target in val_loader:
+                    data, target = data.to(self.device), target.to(self.device)
+
+                    logit = self.net(data)
+
+                    prediction = torch.argmax(logit, dim=-1)
+                    total_accuracy += (prediction == target).sum().item()
+
+                accuracy = total_accuracy / len(val_loader.dataset)
+                print(accuracy)
                 if stop:
                     break
                 if self.scheduler:
