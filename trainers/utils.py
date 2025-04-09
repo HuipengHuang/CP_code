@@ -1,19 +1,6 @@
 import numpy as np
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_fscore_support, accuracy_score
 
-from .trainer import Trainer
-from .uncertainty_aware_trainer import UncertaintyAwareTrainer
-from .mil_trainier import MilTrainer
-
-def get_trainer(args, num_classes):
-    if args.algorithm == "uatr":
-        trainer = UncertaintyAwareTrainer(args, num_classes)
-    elif args.model == "dsmil":
-        trainer = MilTrainer(args, num_classes)
-    else:
-        trainer = Trainer(args, num_classes)
-    return trainer
-
 
 def optimal_thresh(fpr, tpr, thresholds, p=0):
     loss = (fpr - tpr) - p * tpr / (fpr + tpr + 1)

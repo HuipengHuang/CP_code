@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import ConcatDataset, Subset, DataLoader
 
 from datasets.utils import build_dataloader, build_dataset, random_split
-from trainers.utils import get_trainer
+from trainers.get_trainer import get_trainer
 from common.utils import save_exp_result
 
 

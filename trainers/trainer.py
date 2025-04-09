@@ -7,7 +7,7 @@ from predictors.utils import get_predictor
 from loss.utils import get_loss_function
 from .cadapter import CAdapter, Adapter
 from .early_stopping import EarlyStopping
-from .utils import five_scores
+
 
 class Trainer:
     """
@@ -125,6 +125,8 @@ class Trainer:
         if not train_net:
             for param in self.net.parameters():
                 param.requires_grad = train_net
+
+
 
 
 """    def val_loop(self, val_loader):
