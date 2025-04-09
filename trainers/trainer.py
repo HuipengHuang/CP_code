@@ -86,7 +86,7 @@ class Trainer:
                 val_loss = self.compute_validation_loss(val_loader)
                 stop = self.early_stopping(val_loss, epoch)
 
-                auroc = AUROC(task="binary")
+
 
                 positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
                 label = torch.tensor([]).to(self.device)
@@ -105,7 +105,7 @@ class Trainer:
                         (positive_label_prob, prob), dim=0)
                     label = torch.cat((label, target), dim=0)
 
-                auc = AUROC(positive_label_prob, label)
+                auc = self.predictor.compute_binary_auroc(positive_label_prob, label)
 
 
 
