@@ -23,8 +23,10 @@ parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 parser.add_argument("--save_result", default=None, choices=["True", "False"])
 parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
 parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
-parser.add_argument("--cross_validation", default=None, type=int)
 parser.add_argument("--patience", default=None, type=int)
+
+parser.add_argument("--kfold", default=None, type=int)
+parser.add_argument("--ktime", default=1, type=int)
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
@@ -84,7 +86,7 @@ args = parser.parse_args()
 seed = args.seed
 if seed:
     set_seed(seed)
-if args.cross_validation is None:
+if args.kfold is None:
     if args.algorithm == "cp" or args.algorithm == "uatr":
         train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
 
