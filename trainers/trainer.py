@@ -105,7 +105,7 @@ class Trainer:
                         (positive_label_prob, prob), dim=0)
                     label = torch.cat((label, target), dim=0)
 
-                auc = self.predictor.get_auc(val_loader)
+                auc = AUROC(positive_label_prob, label)
 
 
 
