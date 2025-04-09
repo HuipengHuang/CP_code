@@ -140,7 +140,6 @@ class Predictor:
 
     def evaluate_without_cp(self, test_loader):
         self.net.eval()
-        loss = 0.
         bag_prob, bag_labels = [], []
 
         with torch.no_grad():
@@ -151,14 +150,11 @@ class Predictor:
 
                 test_logits = self.net(data)
 
-                test_loss = self.loss_function(test_logits, target)
-                loss += test_loss.item()
                 bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 
 
             accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
-            loss = loss / len(test_loader.dataset)
-            print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
+            print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
             result_dict = {"Accuracy": accuracy, "AUC":auc_value, "Precision":precision, "Recall":recall, "Fscore":fscore}
             return result_dict
 
