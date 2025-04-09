@@ -160,7 +160,7 @@ class Predictor:
                                "Coverage": coverage}
 
             if self.compute_auc:
-                auc = self.get_auc(test_loader)
+                auc = self.get_auc(test_loader).item()
                 result_dict["AUC"] = auc
 
             return result_dict
@@ -199,7 +199,7 @@ class Predictor:
                 result_dict = {"Top1Accuracy": accuracy}
 
             if self.compute_auc:
-                auc = self.get_auc(test_loader)
+                auc = self.get_auc(test_loader).item()
                 result_dict["AUC"] = auc
             return result_dict
 
