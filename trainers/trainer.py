@@ -1,6 +1,6 @@
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torchmetrics import AUROC
+from .utils import five_scores
 from tqdm import tqdm
 import models
 from predictors.utils import get_predictor
@@ -82,22 +82,22 @@ class Trainer:
     def val_loop(self, val_loader):
         self.net.eval()
         loss = 0.
-        bag_logit, bag_labels = [], []
+        bag_prob, bag_labels = [], []
 
         with torch.no_grad():
-            for i, data, target in enumerate(val_loader):
+            for i, (data, target) in enumerate(val_loader):
                 bag_labels.append(target.item())
                 data = data.to(self.device)
-                label = target.to(self.device)
+                target = target.to(self.device)
 
                 test_logits = self.net(data)
 
-                test_loss = self.loss_function(test_logits, label)
+                test_loss = self.loss_function(test_logits, target)
                 loss += test_loss.item()
-                bag_logit.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+                bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 
 
-            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_logit,)
+            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
             loss = loss / len(val_loader.datasets)
             print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
             return accuracy, auc_value, precision, recall, fscore, loss
