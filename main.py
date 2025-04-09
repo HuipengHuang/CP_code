@@ -93,6 +93,6 @@ if args.kfold is None:
     else:
         algorithm.standard(args)
 else:
-    algorithm.cp_with_cv(args)
+    algorithm.cross_validation(args)
 
 
