@@ -98,7 +98,7 @@ class Trainer:
 
 
             accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
-            loss = loss / len(val_loader.datasets)
+            loss = loss / len(val_loader.dataset)
             print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
             return accuracy, auc_value, precision, recall, fscore, loss
 
