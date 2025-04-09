@@ -42,7 +42,7 @@ def standard(args):
     train_loader, _, test_loader, num_classes = build_dataloader(args)
     trainer = get_trainer(args, num_classes)
 
-    trainer.train(train_loader, args.epochs)
+    trainer.train(train_loader, args.epochs, test_loader)
     result_dict = trainer.predictor.evaluate(test_loader)
     print(f"AUC: {trainer.predictor.compute_auc(test_loader)}")
     for key, value in result_dict.items():
@@ -107,9 +107,6 @@ def cross_validation(args):
     # Calculate and print average performance across all folds and times
     avg_results = {}
     for metric in all_results[0].keys():
-        print(metric)
-        print(all_results[0][metric])
-        print(type(all_results[0][metric]))
         avg_results[metric] = np.mean([r[metric] for r in all_results])
 
     print("\nFinal Average Performance:")
