@@ -60,7 +60,7 @@ def cross_validation(args):
     print(len(ds))
     x = 0
     for i in range(len(ds)):
-        x, y = ds[i]
+        x1, y = ds[i]
         if y == 1:
             x += 1
     print("x")
