@@ -109,12 +109,14 @@ class Trainer:
 
     def train(self, train_loader, epochs, val_loader=None):
         self.net.train()
+        if val_loader is None:
+            print("val is none")
+        if self.early_stopping is None:
+            print("early stopping is none")
         if val_loader is None or self.early_stopping is None:
-            print("not val")
             for epoch in range(epochs):
                 self.train_loop(train_loader, epoch)
         else:
-            print("val")
             for epoch in range(epochs):
                 self.train_loop(train_loader, epoch)
                 loss = self.val_loop(val_loader)
