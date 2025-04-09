@@ -72,7 +72,7 @@ def cross_validation(args):
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
 
             trainer = get_trainer(args, num_classes)
-            # Create subsets
+
             train_subset = Subset(ds, train_idx)
             test_subset = Subset(ds, test_idx)
 
