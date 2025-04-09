@@ -94,8 +94,12 @@ class Trainer:
                     prediction = torch.argmax(logit, dim=-1)
                     total_accuracy += (prediction == target).sum().item()
 
+                auc = self.predictor.get_auc(val_loader)
+
+
+
                 accuracy = total_accuracy / len(val_loader.dataset)
-                print(accuracy)
+                print(f"AUC: {auc}. Accuracy: {accuracy}")
                 if stop:
                     break
                 if self.scheduler:
