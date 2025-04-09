@@ -57,14 +57,6 @@ def cross_validation(args):
 
     # Combine all datasets for k-fold CV
     ds = ConcatDataset([mil_train_dataset, mil_cal_dataset, mil_test_dataset])
-    print(len(ds))
-    x = 0
-    for i in range(len(ds)):
-        x1, y = ds[i]
-        if y == 1:
-            x += 1
-    print("x")
-    print(x)
     n_samples = len(ds)
 
     # Initialize results storage
