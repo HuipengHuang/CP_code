@@ -24,7 +24,7 @@ class Trainer:
             self.optimizer = torch.optim.Adam(self.net.parameters(), lr=args.learning_rate,weight_decay=args.weight_decay)
 
         if args.learning_rate_scheduler == 'cosine':
-            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=200)
+            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=200, eta_min=0)
         else:
             self.scheduler = None
 

@@ -174,16 +174,16 @@ def build_dataloader(args):
             cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=False)
         else:
             cal_loader = None
-        test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
     else:
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
         if cal_dataset:
             cal_loader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=False)
         else:
             cal_loader = None
-        test_laoder = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-    return train_loader, cal_loader, test_laoder, num_classes
+    return train_loader, cal_loader, test_loader, num_classes
 
 
 

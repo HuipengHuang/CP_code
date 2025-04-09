@@ -110,11 +110,11 @@ class MILCamelyon16_rn50(Dataset):
                         label = 1
                     else:
                         continue
-                    data = torch.load(os.path.join(f"{path}/pt", f"{filename}.pt")).to(self.device).to(torch.float32)
+                    data = torch.load(os.path.join(f"{path}/pt", f"{filename}.pt")).to(self.device)
                 else:
                     if "test" in filename:
                         label = df.loc[filename, 1]
-                        data = torch.load(os.path.join(f"{path}/pt", f"{filename}.pt")).to(self.device).to(torch.float32)
+                        data = torch.load(os.path.join(f"{path}/pt", f"{filename}.pt")).to(self.device)
                     else:
                         continue
                 label = torch.tensor(label, device=device)
