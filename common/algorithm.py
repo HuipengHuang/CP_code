@@ -39,7 +39,6 @@ def cp(args):
             save_exp_result(args, trainer, result_dict)
 
 def standard(args):
-    print("i am in standard")
     train_loader, _, test_loader, num_classes = build_dataloader(args)
     trainer = get_trainer(args, num_classes)
 
@@ -93,7 +92,7 @@ def cross_validation(args):
             train_loader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_loader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
 
-            trainer.train(train_loader, args.epochs, cal_loader)
+            trainer.train(train_loader, args.epochs, test_loader)
 
             # Evaluate on validation set
             result_dict = trainer.predictor.evaluate(test_loader)
