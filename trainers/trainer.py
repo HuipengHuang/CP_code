@@ -54,6 +54,7 @@ class Trainer:
             self.early_stopping = EarlyStopping(patience=args.patience)
         else:
             self.early_stopping = None
+        self.args = args
 
     def train_batch(self, data, target):
         data = data.to(self.device)
@@ -69,47 +70,57 @@ class Trainer:
         self.optimizer.step()
         return loss
 
+    def train_loop(self, train_loader, epoch):
+            self.net.train()
+            for data, target in tqdm(train_loader, desc=f"Epoch: {epoch + 1} / {self.args.epochs}"):
+                self.train_batch(data, target)
+
+            if self.scheduler:
+                self.scheduler.step()
+    def val_loop(self, val_loader):
+        loss = 0
+        accuracy = 0
+        with torch.no_grad():
+            label = torch.tensor([], device=self.device)
+            positive_class_prob = torch.tensor([], device=self.device)
+            for data, target in val_loader:
+                data = data.to(self.device)
+                target = target.to(self.device)
+                logits = self.net(data)
+
+                val_loss = self.loss_function(logits, target)
+                loss += val_loss.item()
+
+                prob = torch.softmax(logits, dim=-1)
+                prediction = torch.argmax(prob, dim=-1)
+                accuracy += (prediction == target).sum().item()
+
+                positive_class_prob = torch.cat((positive_class_prob, prob[:, 1]), dim=0)
+                label = torch.cat((label, target), dim=0)
+            loss = loss / len(val_loader.dataset)
+            accuracy = accuracy / len(val_loader.dataset)
+            auroc = AUROC("binary")
+            auc = auroc(positive_class_prob, label)
+            print(f"Accuracy:{accuracy}, AUC: {auc} loss: {loss}")
+            return loss
+
+
+
+
     def train(self, train_loader, epochs, val_loader=None):
         self.net.train()
         if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
-                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch + 1} / {epochs}"):
-                    self.train_batch(data, target)
-
-                if self.scheduler:
-                    self.scheduler.step()
+                self.train_loop(train_loader, epoch)
         else:
             for epoch in range(epochs):
-                for data, target in tqdm(train_loader, desc=f"Epoch: {epoch + 1} / {epochs}"):
-                    self.train_batch(data, target)
-
-                val_loss = self.compute_validation_loss(val_loader)
-                stop = self.early_stopping(val_loss, epoch)
-
-
-                total_accuracy = 0
-                for data, target in val_loader:
-                    data, target = data.to(self.device), target.to(self.device)
-
-                    logit = self.net(data)
-
-                    prediction = torch.argmax(logit, dim=-1)
-                    total_accuracy += (prediction == target).sum().item()
-
-                accuracy = total_accuracy / len(val_loader.dataset)
-                print(f"Accuracy: {accuracy}")
+                self.train_loop(train_loader, epoch)
+                loss = self.val_loop(val_loader)
+                stop = self.early_stopping(loss, epoch)
                 if stop:
                     break
-                if self.scheduler:
-                    self.scheduler.step()
 
-    def compute_validation_loss(self, val_loader):
-        loss = 0
-        for data, target in val_loader:
-            data, target = data.to(self.device), target.to(self.device)
-            logits = self.net(data)
-            loss += self.loss_function(logits, target).item()
-        return loss / len(val_loader)
+
 
     def set_train_mode(self, train_net, train_adapter):
         assert self.adapter is not None, print("The trainer does not have an adapter.")
