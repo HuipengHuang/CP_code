@@ -1,6 +1,7 @@
 import argparse
 from torch.utils.data import DataLoader, ConcatDataset
 from common.utils import set_seed, save_exp_result
+from common import algorithm
 from datasets.utils import build_dataloader, get_dataset_list
 from trainers.utils import get_trainer
 
@@ -88,54 +89,10 @@ if seed:
     set_seed(seed)
 if args.kfold is None:
     if args.algorithm == "cp" or args.algorithm == "uatr":
-        train_loader, cal_loader, test_loader, num_classes = build_dataloader(args)
-
-        trainer = get_trainer(args, num_classes)
-
-        trainer.train(train_loader, args.epochs, val_loader=cal_loader)
-
-        trainer.predictor.calibrate(cal_loader)
-        result_dict = trainer.predictor.evaluate(test_loader)
-        for key, value in result_dict.items():
-            print(f'{key}: {value}')
-        if args.save == "True":
-            save_exp_result(args, trainer, result_dict)
-
+        algorithm.cp(args)
     else:
-
-        train_loader, _, test_loader, num_classes = build_dataloader(args)
-        trainer = get_trainer(args, num_classes)
-
-        trainer.train(train_loader, args.epochs)
-        result_dict = trainer.predictor.evaluate(test_loader)
-        print(f"AUC: {trainer.predictor.compute_auc(test_loader)}")
-        for key, value in result_dict.items():
-            print(f'{key}: {value}')
-        if args.save == "True":
-            save_exp_result(args, trainer, result_dict)
-
+        algorithm.standard(args)
 else:
-    num_validation = args.cross_validation
-    dataset_list, num_classes = get_dataset_list(args)
-    for i in range(num_validation):
-        if i != 0:
-            j = i - 1
-        else:
-            j = 1
-        test_dataset = dataset_list[i]
-        cal_dataset = dataset_list[j]
-        train_dataset = ConcatDataset([ dataset_list[i] for k in range(num_validation) if k != i and k != j])
-        train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-        cal_dataloader = DataLoader(cal_dataset, batch_size=args.batch_size, shuffle=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-
-        trainer = get_trainer(args, num_classes)
-        trainer.train(train_dataloader, args.epochs)
-        trainer.predictor.calibrate(cal_dataloader)
-        result_dict = trainer.predictor.evaluate(test_dataloader)
-        for key, value in result_dict.items():
-            print(f'{key}: {value}')
-        if args.save == "True":
-            save_exp_result(args, trainer, result_dict)
+    algorithm.cp_with_cv(args)
 
 
