@@ -107,7 +107,7 @@ def cross_validation(args):
     # Calculate and print average performance across all folds and times
     avg_results = {}
     for metric in all_results[0].keys():
-        avg_results[metric] = torch.mean(torch.cat([r[metric] for r in all_results], dim=0))
+        avg_results[metric] = np.mean([r[metric] for r in all_results])
 
     print("\nFinal Average Performance:")
     for key, value in avg_results.items():
