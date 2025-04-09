@@ -1,5 +1,6 @@
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torchmetrics import AUROC
 from tqdm import tqdm
 import models
 from predictors.utils import get_predictor
@@ -85,6 +86,11 @@ class Trainer:
                 val_loss = self.compute_validation_loss(val_loader)
                 stop = self.early_stopping(val_loss, epoch)
 
+                auroc = AUROC(task="binary")
+
+                positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
+                label = torch.tensor([]).to(self.device)
+
                 total_accuracy = 0
                 for data, target in val_loader:
                     data, target = data.to(self.device), target.to(self.device)
@@ -93,6 +99,11 @@ class Trainer:
 
                     prediction = torch.argmax(logit, dim=-1)
                     total_accuracy += (prediction == target).sum().item()
+
+                    prob = torch.softmax(logit, dim=-1)
+                    positive_label_prob = torch.cat(
+                        (positive_label_prob, prob), dim=0)
+                    label = torch.cat((label, target), dim=0)
 
                 auc = self.predictor.get_auc(val_loader)
 
