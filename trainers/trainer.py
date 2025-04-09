@@ -87,10 +87,6 @@ class Trainer:
                 stop = self.early_stopping(val_loss, epoch)
 
 
-
-                positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
-                label = torch.tensor([]).to(self.device)
-
                 total_accuracy = 0
                 for data, target in val_loader:
                     data, target = data.to(self.device), target.to(self.device)
@@ -100,17 +96,8 @@ class Trainer:
                     prediction = torch.argmax(logit, dim=-1)
                     total_accuracy += (prediction == target).sum().item()
 
-                    prob = torch.softmax(logit, dim=-1)
-                    positive_label_prob = torch.cat(
-                        (positive_label_prob, prob), dim=0)
-                    label = torch.cat((label, target), dim=0)
-
-                auc = self.predictor.compute_binary_auroc(positive_label_prob, label)
-
-
-
                 accuracy = total_accuracy / len(val_loader.dataset)
-                print(f"AUC: {auc}. Accuracy: {accuracy}")
+                print(f"Accuracy: {accuracy}")
                 if stop:
                     break
                 if self.scheduler:
