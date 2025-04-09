@@ -39,6 +39,7 @@ def cp(args):
             save_exp_result(args, trainer, result_dict)
 
 def standard(args):
+    print("i am in standard")
     train_loader, _, test_loader, num_classes = build_dataloader(args)
     trainer = get_trainer(args, num_classes)
 
