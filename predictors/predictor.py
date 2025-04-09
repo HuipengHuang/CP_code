@@ -6,6 +6,9 @@ from torchmetrics import AUROC
 import torchsort
 from sklearn.metrics import roc_auc_score
 
+from trainers.utils import five_scores
+
+
 class Predictor:
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
         self.test_score = get_score(args)
@@ -106,101 +109,57 @@ class Predictor:
         else:
             return self.evaluate_with_cp(test_loader)
 
-    def evaluate_with_cp(self, test_loader):
+    def evaluate_with_cp(self, val_loader):
+        assert self.threshold is not None, print("Please calibrate first.")
         self.net.eval()
-        if self.adapter:
-            self.adapter.adapter_net.eval()
-
+        bag_prob, bag_labels = [], []
+        average_set_size = 0
+        coverage = 0
         with torch.no_grad():
-            total_accuracy = 0
-            total_coverage = 0
-            total_prediction_set_size = 0
+            for i, (data, target) in enumerate(val_loader):
+                bag_labels.append(target.item())
+                data = data.to(self.device)
+                target = target.to(self.device)
 
-            if self.adapter:
-                for data, target in test_loader:
-                    data, target = data.to(self.device), target.to(self.device)
+                test_logits = self.net(data)
 
-                    logit = self.adapter(self.net(data))
-                    prob = self.final_activation_function(logit)
+                prob = torch.softmax(test_logits, dim=-1)
+                bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                score_tensor = self.score(prob)
+                average_set_size += (score_tensor < self.threshold).sum().item()
+                coverage += (score_tensor[torch.arange(score_tensor.shape[0]), target] < self.threshold).sum().item()
 
-                    prediction = torch.argmax(prob, dim=-1)
-                    total_accuracy += (prediction == target).sum().item()
-
-                    batch_score = self.test_score(prob)
-                    prediction_set = (batch_score <= self.threshold)
-                    total_coverage += prediction_set[torch.arange(target.shape[0]), target].sum().item()
-                    total_prediction_set_size += prediction_set.sum().item()
-
-                accuracy = total_accuracy / len(test_loader.dataset)
-                coverage = total_coverage / len(test_loader.dataset)
-                avg_set_size = total_prediction_set_size / len(test_loader.dataset)
-                result_dict = {"Top1Accuracy": accuracy,
-                               "AverageSetSize": avg_set_size,
-                               "Coverage": coverage}
-            else:
-                for data, target in test_loader:
-                    data, target = data.to(self.device), target.to(self.device)
-
-                    logit = self.net(data)
-                    prob = self.final_activation_function(logit)
-
-                    prediction = torch.argmax(prob, dim=-1)
-                    total_accuracy += (prediction == target).sum().item()
-
-                    batch_score = self.test_score(prob)
-                    prediction_set = (batch_score <= self.threshold)
-                    total_coverage += prediction_set[torch.arange(target.shape[0]), target].sum().item()
-                    total_prediction_set_size += prediction_set.sum().item()
-
-                accuracy = total_accuracy / len(test_loader.dataset)
-                coverage = total_coverage / len(test_loader.dataset)
-                avg_set_size = total_prediction_set_size / len(test_loader.dataset)
-                result_dict = {"Top1Accuracy": accuracy,
-                               "AverageSetSize": avg_set_size,
-                               "Coverage": coverage}
-
-            if self.compute_auc:
-                auc = self.get_auc(test_loader).item()
-                result_dict["AUC"] = auc
-
+            coverage = coverage / len(val_loader)
+            average_set_size = average_set_size / len(val_loader)
+            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
+            print(f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+            result_dict = {"Coverage":coverage, "Average Set Size":average_set_size, "Accuracy": accuracy, "AUC":auc_value, "Precision":precision, "Recall":recall, "Fscore":fscore}
             return result_dict
+
+
 
     def evaluate_without_cp(self, test_loader):
         self.net.eval()
-        if self.adapter:
-            self.adapter.adapter_net.eval()
+        loss = 0.
+        bag_prob, bag_labels = [], []
 
         with torch.no_grad():
-            total_accuracy = 0
-            if self.adapter:
-                for data, target in test_loader:
-                    data, target = data.to(self.device), target.to(self.device)
+            for i, (data, target) in enumerate(test_loader):
+                bag_labels.append(target.item())
+                data = data.to(self.device)
+                target = target.to(self.device)
 
-                    logit = self.adapter(self.net(data))
-                    prob = self.final_activation_function(logit)
+                test_logits = self.net(data)
 
-                    prediction = torch.argmax(prob, dim=-1)
-                    total_accuracy += (prediction == target).sum().item()
+                test_loss = self.loss_function(test_logits, target)
+                loss += test_loss.item()
+                bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 
 
-                accuracy = total_accuracy / len(test_loader.dataset)
-                result_dict = {"Top1Accuracy": accuracy}
-            else:
-                for data, target in test_loader:
-                    data, target = data.to(self.device), target.to(self.device)
-
-                    logit = self.net(data)
-                    prob = self.final_activation_function(logit)
-
-                    prediction = torch.argmax(prob, dim=-1)
-                    total_accuracy += (prediction == target).sum().item()
-
-                accuracy = total_accuracy / len(test_loader.dataset)
-                result_dict = {"Top1Accuracy": accuracy}
-
-            if self.compute_auc:
-                auc = self.get_auc(test_loader).item()
-                result_dict["AUC"] = auc
+            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
+            loss = loss / len(test_loader.dataset)
+            print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
+            result_dict = {"Accuracy": accuracy, "AUC":auc_value, "Precision":precision, "Recall":recall, "Fscore":fscore}
             return result_dict
 
     def get_auc(self,test_loader):
