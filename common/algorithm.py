@@ -92,7 +92,10 @@ def cross_validation(args):
             train_loader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_loader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
 
-            trainer.train(train_loader, args.epochs, test_loader)
+            if args.algorithm == "standard":
+                trainer.train(train_loader, args.epochs, test_loader)
+            else:
+                trainer.train(train_loader, args.epochs, cal_loader)
 
             # Evaluate on validation set
             result_dict = trainer.predictor.evaluate(test_loader)

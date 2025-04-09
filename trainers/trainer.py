@@ -7,6 +7,7 @@ from predictors.utils import get_predictor
 from loss.utils import get_loss_function
 from .cadapter import CAdapter, Adapter
 from .early_stopping import EarlyStopping
+from .utils import five_scores
 
 class Trainer:
     """
@@ -77,7 +78,57 @@ class Trainer:
 
             if self.scheduler:
                 self.scheduler.step()
+
     def val_loop(self, val_loader):
+        self.net.eval()
+        loss = 0.
+        bag_logit, bag_labels = [], []
+
+        with torch.no_grad():
+            for i, data, target in enumerate(val_loader):
+                bag_labels.append(target.item())
+                data = data.to(self.device)
+                label = target.to(self.device)
+
+                test_logits = self.net(data)
+
+                test_loss = self.loss_function(test_logits, label)
+                loss += test_loss.item()
+                bag_logit.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+
+
+            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_logit,)
+            loss = loss / len(val_loader.datasets)
+            print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
+            return accuracy, auc_value, precision, recall, fscore, loss
+
+    def train(self, train_loader, epochs, val_loader=None):
+        self.net.train()
+        if val_loader is None or self.early_stopping is None:
+            for epoch in range(epochs):
+                self.train_loop(train_loader, epoch)
+        else:
+            for epoch in range(epochs):
+                self.train_loop(train_loader, epoch)
+                accuracy, auc_value, precision, recall, fscore, loss = self.val_loop(val_loader)
+                stop = self.early_stopping(loss, epoch)
+                if stop:
+                    break
+
+
+
+    def set_train_mode(self, train_net, train_adapter):
+        assert self.adapter is not None, print("The trainer does not have an adapter.")
+        if not train_adapter:
+            for param in self.adapter.adapter_net.parameters():
+                param.requires_grad = train_adapter
+        if not train_net:
+            for param in self.net.parameters():
+                param.requires_grad = train_net
+
+
+"""    def val_loop(self, val_loader):
+        self.net.eval()
         loss = 0
         accuracy = 0
         with torch.no_grad():
@@ -102,31 +153,4 @@ class Trainer:
             auroc = AUROC("binary")
             auc = auroc(positive_class_prob, label)
             print(f"Accuracy:{accuracy}, AUC: {auc} loss: {loss}")
-            return loss
-
-
-
-
-    def train(self, train_loader, epochs, val_loader=None):
-        self.net.train()
-        if val_loader is None or self.early_stopping is None:
-            for epoch in range(epochs):
-                self.train_loop(train_loader, epoch)
-        else:
-            for epoch in range(epochs):
-                self.train_loop(train_loader, epoch)
-                loss = self.val_loop(val_loader)
-                stop = self.early_stopping(loss, epoch)
-                if stop:
-                    break
-
-
-
-    def set_train_mode(self, train_net, train_adapter):
-        assert self.adapter is not None, print("The trainer does not have an adapter.")
-        if not train_adapter:
-            for param in self.adapter.adapter_net.parameters():
-                param.requires_grad = train_adapter
-        if not train_net:
-            for param in self.net.parameters():
-                param.requires_grad = train_net
+            return loss"""
