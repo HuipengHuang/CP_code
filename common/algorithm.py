@@ -107,6 +107,8 @@ def cross_validation(args):
     # Calculate and print average performance across all folds and times
     avg_results = {}
     for metric in all_results[0].keys():
+        print(all_results[0][metric])
+        print(type(all_results[0][metric]))
         avg_results[metric] = np.mean([r[metric] for r in all_results])
 
     print("\nFinal Average Performance:")
