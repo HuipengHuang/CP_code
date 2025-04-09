@@ -51,7 +51,7 @@ def standard(args):
         save_exp_result(args, trainer, result_dict)
 
 
-def cp_with_cv(args):
+def cross_validation(args):
     # Load datasets
     mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes = build_dataset(args)
 
@@ -68,24 +68,36 @@ def cp_with_cv(args):
         kfold = KFold(n_splits=args.kfold, shuffle=True, random_state=args.seed + time if args.seed else None)
 
         # Perform k-fold CV
-        for fold, (train_idx, val_idx) in enumerate(kfold.split(np.arange(n_samples))):
-            print(len(train_idx), len(val_idx))
+        for fold, (train_idx, test_idx) in enumerate(kfold.split(np.arange(n_samples))):
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
 
+            trainer = get_trainer(args, num_classes)
             # Create subsets
             train_subset = Subset(ds, train_idx)
-            val_subset = Subset(ds, val_idx)
+            test_subset = Subset(ds, test_idx)
 
             # Create data loaders
-            train_loader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
-            val_loader = DataLoader(val_subset, batch_size=args.batch_size, shuffle=False)
+            if args.algorithm == "cp":
+                k1fold = KFold(n_splits=args.kfold - 1, shuffle=True, random_state=args.seed + time if args.seed else None)
+                train_idx, cal_idx = k1fold.split(np.arange(len(train_subset)))
+                cal_subset = Subset(train_subset, cal_idx)
+                train_subset = Subset(train_subset, train_idx)
+            else:
+                cal_subset = None
 
-            # Initialize and train model
-            trainer = get_trainer(args, num_classes)
-            trainer.train(train_loader, args.epochs)
+            if cal_subset is not None:
+                cal_loader = DataLoader(cal_subset, batch_size=args.batch_size, shuffle=False)
+                trainer.predictor.calibrate(cal_loader)
+            else:
+                cal_loader = None
+
+            train_loader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
+            test_loader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
+
+            trainer.train(train_loader, args.epochs, cal_loader)
 
             # Evaluate on validation set
-            result_dict = trainer.predictor.evaluate(val_loader)
+            result_dict = trainer.predictor.evaluate(test_loader)
 
             all_results.append(result_dict)
 
@@ -97,7 +109,7 @@ def cp_with_cv(args):
     # Calculate and print average performance across all folds and times
     avg_results = {}
     for metric in all_results[0].keys():
-        avg_results[metric] = torch.mean([r[metric] for r in all_results])
+        avg_results[metric] = torch.mean(torch.cat([r[metric] for r in all_results], dim=0))
 
     print("\nFinal Average Performance:")
     for key, value in avg_results.items():
