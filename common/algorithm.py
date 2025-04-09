@@ -69,6 +69,9 @@ def cross_validation(args):
 
         # Perform k-fold CV
         for fold, (train_idx, test_idx) in enumerate(kfold.split(np.arange(n_samples))):
+            print("---")
+            print(fold)
+            print(len(train_idx), len(test_idx))
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
 
             trainer = get_trainer(args, num_classes)

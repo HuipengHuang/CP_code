@@ -62,7 +62,7 @@ class Predictor:
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             return threshold
 
-    def calibrate_without_adapter(self, cal_loader, alpha):
+    def calibrate_without_adapter(self, cal_loader, alpha=None):
         with torch.no_grad():
             if alpha is None:
                 alpha = self.alpha
