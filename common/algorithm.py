@@ -5,7 +5,7 @@ from sklearn.model_selection import KFold
 import torch
 from torch.utils.data import ConcatDataset, Subset, DataLoader
 
-from datasets.utils import build_dataloader, build_dataset
+from datasets.utils import build_dataloader, build_dataset, random_split
 from trainers.utils import get_trainer
 from common.utils import save_exp_result
 
@@ -69,9 +69,6 @@ def cross_validation(args):
 
         # Perform k-fold CV
         for fold, (train_idx, test_idx) in enumerate(kfold.split(np.arange(n_samples))):
-            print("---")
-            print(fold)
-            print(len(train_idx), len(test_idx))
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
 
             trainer = get_trainer(args, num_classes)
@@ -81,10 +78,8 @@ def cross_validation(args):
 
             # Create data loaders
             if args.algorithm == "cp":
-                k1fold = KFold(n_splits=args.kfold - 1, shuffle=True, random_state=args.seed + time if args.seed else None)
-                train_idx, cal_idx = k1fold.split(np.arange(len(train_subset)))
-                cal_subset = Subset(train_subset, cal_idx)
-                train_subset = Subset(train_subset, train_idx)
+                cal_size = int(len(train_subset) / (args.kfold - 1))
+                train_subset, cal_subset = random_split(train_subset, [len(train_subset) - cal_size, cal_size])
             else:
                 cal_subset = None
 
