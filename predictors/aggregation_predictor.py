@@ -88,6 +88,7 @@ class AggPredictor(Predictor):
                 coverage = coverage / len(test_loader)
                 average_set_size = average_set_size / len(test_loader)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                print("Standard Method")
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
@@ -107,6 +108,7 @@ class AggPredictor(Predictor):
                     bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                print("Standard Method")
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
                                "Fscore": fscore}
