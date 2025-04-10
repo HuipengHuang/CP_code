@@ -2,10 +2,7 @@ from scores.utils import get_score, get_train_score
 import torch
 import torch.nn as nn
 import math
-from torchmetrics import AUROC
 import torchsort
-from sklearn.metrics import roc_auc_score
-
 from trainers.utils import five_scores
 
 
@@ -104,98 +101,53 @@ class Predictor:
         """Must be called after calibration.
         Output a dictionary containing Top1 Accuracy, Coverage and Average Prediction Set Size."""
         self.set_mode("test")
+        self.net.eval()
         if self.threshold is None:
-            return self.evaluate_without_cp(test_loader)
+            assert self.threshold is not None, print("Please calibrate first.")
+            bag_prob, bag_labels = [], []
+            average_set_size = 0
+            coverage = 0
+            with torch.no_grad():
+                for i, (data, target) in enumerate(test_loader):
+                    bag_labels.append(target.item())
+                    data = data.to(self.device)
+                    target = target.to(self.device)
+
+                    test_logits = self.net(data)
+
+                    prob = torch.softmax(test_logits, dim=-1)
+                    bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                    score_tensor = self.score(prob)
+                    average_set_size += (score_tensor < self.threshold).sum().item()
+                    coverage += (
+                                score_tensor[torch.arange(score_tensor.shape[0]), target] < self.threshold).sum().item()
+
+                coverage = coverage / len(test_loader)
+                average_set_size = average_set_size / len(test_loader)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                print(
+                    f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
+                               "AUC": auc_value, "Precision": precision, "Recall": recall, "Fscore": fscore}
+                return result_dict
         else:
-            return self.evaluate_with_cp(test_loader)
+            bag_prob, bag_labels = [], []
 
-    def evaluate_with_cp(self, val_loader):
-        assert self.threshold is not None, print("Please calibrate first.")
-        self.net.eval()
-        bag_prob, bag_labels = [], []
-        average_set_size = 0
-        coverage = 0
-        with torch.no_grad():
-            for i, (data, target) in enumerate(val_loader):
-                bag_labels.append(target.item())
-                data = data.to(self.device)
-                target = target.to(self.device)
+            with torch.no_grad():
+                for i, (data, target) in enumerate(test_loader):
+                    bag_labels.append(target.item())
+                    data = data.to(self.device)
+                    target = target.to(self.device)
 
-                test_logits = self.net(data)
+                    test_logits = self.net(data)
 
-                prob = torch.softmax(test_logits, dim=-1)
-                bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
-                score_tensor = self.score(prob)
-                average_set_size += (score_tensor < self.threshold).sum().item()
-                coverage += (score_tensor[torch.arange(score_tensor.shape[0]), target] < self.threshold).sum().item()
+                    bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 
-            coverage = coverage / len(val_loader)
-            average_set_size = average_set_size / len(val_loader)
-            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
-            print(f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
-            result_dict = {"Coverage":coverage, "Average Set Size":average_set_size, "Accuracy": accuracy, "AUC":auc_value, "Precision":precision, "Recall":recall, "Fscore":fscore}
-            return result_dict
-
-
-
-    def evaluate_without_cp(self, test_loader):
-        self.net.eval()
-        bag_prob, bag_labels = [], []
-
-        with torch.no_grad():
-            for i, (data, target) in enumerate(test_loader):
-                bag_labels.append(target.item())
-                data = data.to(self.device)
-                target = target.to(self.device)
-
-                test_logits = self.net(data)
-
-                bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
-
-
-            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
-            print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
-            result_dict = {"Accuracy": accuracy, "AUC":auc_value, "Precision":precision, "Recall":recall, "Fscore":fscore}
-            return result_dict
-
-    def get_auc(self,test_loader):
-        if self.num_classes == 2:
-            auroc = AUROC(task="binary")
-
-            positive_label_prob = torch.tensor([], dtype=torch.float).to(self.device)
-            label = torch.tensor([]).to(self.device)
-
-            for data, target in test_loader:
-                data, target = data.to(self.device), target.to(self.device)
-                logits = self.net(data)
-                if self.adapter:
-                    logits = self.adapter(logits)
-
-                prob = self.final_activation_function(logits)
-                positive_label_prob = torch.cat((positive_label_prob, prob[:, 1]), dim=0)
-                label = torch.cat((label, target), dim=0)
-
-
-            return auroc(positive_label_prob, label)
-
-        else:
-            assert self.num_classes > 2, print("num_classes must be geater than 2.")
-            auroc = AUROC(task="multiclass", num_classes=self.num_classes)
-
-            all_prob = torch.tensor([], dtype=torch.float).to(self.device)
-            label = torch.tensor([]).to(self.device)
-            for data, target in test_loader:
-                data, target = data.to(self.device), target.to(self.device)
-                logits = self.net(data)
-                if self.adapter:
-                    logits = self.adapter(logits)
-
-                prob = self.final_activation_function(logits)
-                all_prob = torch.cat(
-                    (all_prob, prob), dim=0)
-                label = torch.cat((label, target), dim=0)
-
-            return auroc(all_prob, label)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
+                               "Fscore": fscore}
+                return result_dict
 
     def set_mode(self, mode="train"):
         if mode == "train":
@@ -204,48 +156,5 @@ class Predictor:
             self.score = self.test_score
         else:
             raise ValueError(f"mode {mode} is not supported. Mode could only be train or test")
-
-    def compute_binary_auroc(self, preds, targets):
-        """
-        Compute AUROC using PyTorch operations.
-        preds: Tensor of predicted probabilities for class 1 (shape: [N])
-        targets: Tensor of true binary labels (0 or 1, shape: [N])
-        """
-        # Sort predictions in descending order and get sorted indices
-        preds_sorted, indices = torch.sort(preds, descending=True)
-        targets_sorted = targets[indices]
-
-        # Compute cumulative TP and FP
-        tp = torch.cumsum(targets_sorted.float(), dim=0)  # Cumulative true positives
-        fp = torch.cumsum((1 - targets_sorted).float(), dim=0)  # Cumulative false positives
-
-        # Total positives and negatives
-        num_positives = tp[-1]  # Last element is total positives
-        num_negatives = fp[-1]  # Last element is total negatives
-
-        # Handle edge cases: if no positives or negatives, return NaN
-        if num_positives == 0 or num_negatives == 0:
-            return torch.tensor(float('nan'), device=preds.device)
-
-        # Compute TPR and FPR
-        tpr = torch.cat([torch.tensor([0.0], device=preds.device), tp / num_positives])
-        fpr = torch.cat([torch.tensor([0.0], device=preds.device), fp / num_negatives])
-
-        # Compute AUROC using trapezoidal rule
-        # Area = Σ [(fpr[i+1] - fpr[i]) * (tpr[i+1] + tpr[i]) / 2]
-        auroc = torch.trapz(tpr, fpr)  # PyTorch's trapezoidal integration
-
-        return auroc
-
-    def cal_auc(y_pred, y_true):
-        fz = 0
-        fm = 0
-        for i in range(0, len(y_true) - 1):
-            for j in range(i + 1, len(y_true)):
-                if y_true[i] != y_true[j]:
-                    fm += 1
-                    if y_true[i] > y_true[j] and y_pred[i] > y_pred[j] or y_true[i] < y_true[j] and y_pred[i] < y_pred[j]:
-                        fz += 1
-        return fz / fm
 
 
