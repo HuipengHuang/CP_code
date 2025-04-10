@@ -69,7 +69,7 @@ class PPEG(nn.Module):
 
 
 class TransMIL(nn.Module):
-    def __init__(self,device, input_dim=1024, n_classes=2, dropout=0.25, act="relu"):
+    def __init__(self, device, input_dim=1024, n_classes=2, dropout=0.25, act="relu"):
         super(TransMIL, self).__init__()
         self.pos_layer = PPEG(dim=512)
         self._fc1 = [nn.Linear(input_dim, 512)]

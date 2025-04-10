@@ -20,8 +20,10 @@ class EarlyStopping:
 
     def __call__(self, val_loss, epoch):
         if val_loss < self.best_loss:
-            self.counter += 1
+            self.counter = 0
             self.best_loss = val_loss
+        else:
+            self.counter += 1
             if self.counter >= self.patience and epoch >= self.stop_epoch:
                 return True
         return False
