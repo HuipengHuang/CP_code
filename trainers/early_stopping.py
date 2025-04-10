@@ -25,5 +25,6 @@ class EarlyStopping:
         else:
             self.counter += 1
             if self.counter >= self.patience and epoch >= self.stop_epoch:
+                print(f"Early Stopping encounter at epxoch {epoch}")
                 return True
         return False

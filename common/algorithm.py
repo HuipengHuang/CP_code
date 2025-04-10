@@ -1,10 +1,6 @@
-import random
-
 import numpy as np
-from sklearn.model_selection import KFold
-import torch
 from torch.utils.data import ConcatDataset, Subset, DataLoader
-
+from sklearn.model_selection import StratifiedKFold
 from datasets.utils import build_dataloader, build_dataset, random_split
 from trainers.get_trainer import get_trainer
 from common.utils import save_exp_result
@@ -59,16 +55,20 @@ def cross_validation(args):
     ds = ConcatDataset([mil_train_dataset, mil_cal_dataset, mil_test_dataset])
     n_samples = len(ds)
 
-    # Initialize results storage
+    label = np.array([])
+    for data, target in ds:
+        label = np.append(label, target.item())
+
     all_results = []
 
     # Repeat k-fold CV for args.ktime times
     for time in range(args.ktime):
-        # Initialize k-fold splitter
-        kfold = KFold(n_splits=args.kfold, shuffle=True, random_state=args.seed + time if args.seed else None)
-
+        if args.seed:
+            skf = StratifiedKFold(n_splits=args.kfold, shuffle=True, random_state=args.seed+time)
+        else:
+            skf = StratifiedKFold(n_splits=args.kfold, shuffle=True, random_state=None)
         # Perform k-fold CV
-        for fold, (train_idx, test_idx) in enumerate(kfold.split(np.arange(n_samples))):
+        for fold, (train_idx, test_idx) in enumerate(skf.split(np.arange(n_samples), label)):
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
 
             trainer = get_trainer(args, num_classes)
