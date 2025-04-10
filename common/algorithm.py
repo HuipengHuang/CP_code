@@ -55,9 +55,7 @@ def cross_validation(args):
     ds = ConcatDataset([mil_train_dataset, mil_cal_dataset, mil_test_dataset])
     n_samples = len(ds)
 
-    label = np.array([])
-    for data, target in ds:
-        label = np.append(label, target.item())
+    label = np.array([target.item() for _, target in ds])
 
     all_results = []
 
