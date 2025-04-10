@@ -8,6 +8,7 @@ from trainers.utils import five_scores
 
 class Predictor:
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
+        self.args = args
         self.test_score = get_score(args)
         if args.train_score is None:
             self.train_score = self.test_score
@@ -102,8 +103,7 @@ class Predictor:
         Output a dictionary containing Top1 Accuracy, Coverage and Average Prediction Set Size."""
         self.set_mode("test")
         self.net.eval()
-        if self.threshold is None:
-            assert self.threshold is not None, print("Please calibrate first.")
+        if self.threshold is not None:
             bag_prob, bag_labels = [], []
             average_set_size = 0
             coverage = 0
