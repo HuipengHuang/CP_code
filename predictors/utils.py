@@ -7,7 +7,9 @@ def get_predictor(args, net, num_classes, adapter=None, final_activation_functio
         predictor = MilPredictor(args, net, num_classes, final_activation_function, adapter)
     elif args.arrgregation is not None:
         if args.arrgregation == "max":
-            return MaxPredictor(args, net, num_classes, final_activation_function, adapter)
+            predictor = MaxPredictor(args, net, num_classes, final_activation_function, adapter)
+        else:
+            raise NotImplementedError
     else:
         predictor = Predictor(args, net, num_classes, final_activation_function, adapter)
     return predictor

@@ -1,4 +1,5 @@
 import argparse
+
 from common.utils import set_seed
 from common import algorithm
 
@@ -23,6 +24,7 @@ parser.add_argument("--save_result", default=None, choices=["True", "False"])
 parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
 parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
 parser.add_argument("--patience", default=None, type=int)
+parser.add_argument("--aggregation","-agg", default=None, type=str, choices=["max"])
 
 parser.add_argument("--kfold", default=None, type=int)
 parser.add_argument("--ktime", default=1, type=int)
