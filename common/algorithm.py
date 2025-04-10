@@ -61,10 +61,7 @@ def cross_validation(args):
 
     # Repeat k-fold CV for args.ktime times
     for time in range(args.ktime):
-        if args.seed:
-            skf = StratifiedKFold(n_splits=args.kfold, shuffle=True, random_state=args.seed+time)
-        else:
-            skf = StratifiedKFold(n_splits=args.kfold, shuffle=True, random_state=None)
+        skf = StratifiedKFold(n_splits=args.kfold, shuffle=True, random_state=args.seed+time if args.seed else None)
         # Perform k-fold CV
         for fold, (train_idx, test_idx) in enumerate(skf.split(np.arange(n_samples), label)):
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
@@ -76,8 +73,11 @@ def cross_validation(args):
 
             # Create data loaders
             if args.algorithm == "cp":
-                cal_size = int(len(train_subset) / (args.kfold - 1))
-                train_subset, cal_subset = random_split(train_subset, [len(train_subset) - cal_size, cal_size])
+                skf_cal = StratifiedKFold(n_splits=args.kfold - 1, shuffle=True, random_state=args.seed+time+fold if args.seed else None)
+                train_label = np.array([target.item() for _, target in train_subset])
+                train_sub_idx, cal_idx = next(iter(skf_cal.split(np.arange(len(train_subset)), train_label)))
+                cal_subset = train_subset[cal_idx]
+                train_subset = train_subset[train_sub_idx]
             else:
                 cal_subset = None
 
