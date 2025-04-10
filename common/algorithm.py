@@ -76,8 +76,8 @@ def cross_validation(args):
                 skf_cal = StratifiedKFold(n_splits=args.kfold - 1, shuffle=True, random_state=args.seed+time+fold if args.seed else None)
                 train_label = np.array([target.item() for _, target in train_subset])
                 train_sub_idx, cal_idx = next(iter(skf_cal.split(np.arange(len(train_subset)), train_label)))
-                cal_subset = train_subset[cal_idx]
-                train_subset = train_subset[train_sub_idx]
+                cal_subset = Subset(train_subset,cal_idx)
+                train_subset = Subset(train_subset,train_sub_idx)
             else:
                 cal_subset = None
 
