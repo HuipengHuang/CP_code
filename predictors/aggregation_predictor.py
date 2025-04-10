@@ -43,6 +43,7 @@ class AggPredictor(Predictor):
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"agg-Coverage": coverage, "agg-Average Set Size": average_set_size, "agg-Accuracy": accuracy,
                                "agg-AUC": auc_value, "agg-Precision": precision, "agg-Recall": recall, "agg-Fscore": fscore}
+                print("")
                 return result_dict
         else:
             bag_prob, bag_labels = [], []
@@ -61,6 +62,7 @@ class AggPredictor(Predictor):
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
                                "Fscore": fscore}
+                print("")
                 return result_dict
 
     def standard_aggregation(self, test_loader):
@@ -91,6 +93,7 @@ class AggPredictor(Predictor):
                 print("Standard Method")
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                print("")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
                                "AUC": auc_value, "Precision": precision, "Recall": recall, "Fscore": fscore}
                 return result_dict
@@ -110,6 +113,7 @@ class AggPredictor(Predictor):
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print("Standard Method")
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                print("")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
                                "Fscore": fscore}
                 return result_dict
@@ -121,6 +125,8 @@ class MaxPredictor(AggPredictor):
 
     def get_prob(self, data):
         prob = torch.zeros(size=(1, self.num_classes), device=data.device)
+        print("shape")
+        print(data.shape)
         for i in range(data.shape[0]):
             test_logits = self.net(data[i])
             instance_prob = self.final_activation_function(test_logits)
