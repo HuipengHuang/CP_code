@@ -39,8 +39,6 @@ class AggPredictor(Predictor):
                 coverage = coverage / len(test_loader)
                 average_set_size = average_set_size / len(test_loader)
 
-                print("---")
-                print(bag_prob)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"Aggregation Method: {self.args.aggregation}")
                 print(
@@ -174,5 +172,6 @@ class KMeanPredictor(AggPredictor):
             instance_prob = self.final_activation_function(self.net(cluster_data))
             if instance_prob[0, 1] < prob[0, 1]:
                 prob = instance_prob
+            print(prob)
 
         return prob
