@@ -126,7 +126,7 @@ class MaxPredictor(AggPredictor):
     def get_prob(self, data):
         prob = torch.zeros(size=(1, self.num_classes), device=data.device)
         j = 0
-        for i in range(data.shape[1] / 100):
+        for i in range(int(data.shape[1] / 100)):
             instance_prob = self.final_activation_function(self.net(data[:, i * 100 : i * 100 + 100, :]))
             if prob[:, 1] < instance_prob[:, 1]:
                 prob = instance_prob
