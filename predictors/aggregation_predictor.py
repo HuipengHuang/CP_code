@@ -1,7 +1,7 @@
 from predictors.predictor import Predictor
 import torch
 from trainers.utils import five_scores
-from sklearn.cluster import KMeans
+from kmeans_pytorch import kmeans
 
 class AggPredictor(Predictor):
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
@@ -145,17 +145,35 @@ class KMeanPredictor(AggPredictor):
         self.n_cluster = n_cluster
 
     def get_prob(self, data):
-        data_np = data[0].cpu().numpy()
-        kmeans = KMeans(n_clusters=self.n_cluster, n_init=10)
-        kmeans.fit(data_np)
-        labels = torch.tensor(kmeans.labels_, device=data.device)
+        """
+        Args:
+            data: Input tensor of shape (1, N, 1024) on GPU.
+        Returns:
+            prob: Aggregated probability (1, num_classes) on GPU.
+        """
+        # Extract data (assume batch_size=1)
+        data_tensor = data[0]  # Shape: (N, 1024)
 
-        prob = torch.zeros(size=(1, self.num_classes), device=data.device)
+        # Run K-Means on GPU
+        cluster_ids, _ = kmeans(
+            X=data_tensor,
+            num_clusters=self.n_cluster,
+            device=data_tensor.device  # Use same device as input
+        )
 
+        # Initialize probabilities
+        prob = torch.zeros(size=(1, self.num_classes), device=data_tensor.device)
+
+        # Process each cluster
         for i in range(self.n_cluster):
-            mask = (labels == i)
-            cluster_data = data[0][mask]
+            mask = (cluster_ids == i)
+            cluster_data = data_tensor[mask]  # Shape: (M, 1024), M = cluster size
+
+            # Forward pass through network
             instance_prob = self.final_activation_function(self.net(cluster_data))
+
+            # Update prob (keep min probability for class 1)
             if instance_prob[0, 1] < prob[0, 1]:
                 prob = instance_prob
+
         return prob
