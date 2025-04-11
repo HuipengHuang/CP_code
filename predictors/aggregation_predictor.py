@@ -170,8 +170,7 @@ class KMeanPredictor(AggPredictor):
             cluster_data = data_tensor[mask]
 
             instance_prob = self.final_activation_function(self.net(cluster_data))
-            if instance_prob[0, 1] < prob[0, 1]:
+            if instance_prob[0, 1] > prob[0, 1]:
                 prob = instance_prob
-            print(prob)
 
         return prob
