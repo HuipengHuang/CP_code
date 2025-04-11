@@ -146,7 +146,7 @@ class KMeanPredictor(AggPredictor):
 
     def get_prob(self, data):
         data_np = data[0].cpu().numpy()
-        kmeans = KMeans(n_clusters=self.n_cluster)
+        kmeans = KMeans(n_clusters=self.n_cluster, n_init=10)
         kmeans.fit(data_np)
         labels = torch.tensor(kmeans.labels_, device=data.device)
 
