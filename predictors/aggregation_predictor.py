@@ -154,7 +154,7 @@ class KMeanPredictor(AggPredictor):
 
         for i in range(self.n_cluster):
             mask = (labels == i)
-            cluster_data = data[mask]
+            cluster_data = data[0][mask]
             instance_prob = self.final_activation_function(self.net(cluster_data))
             if instance_prob[0, 1] < prob[0, 1]:
                 prob = instance_prob
