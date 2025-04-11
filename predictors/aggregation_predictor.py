@@ -38,6 +38,9 @@ class AggPredictor(Predictor):
 
                 coverage = coverage / len(test_loader)
                 average_set_size = average_set_size / len(test_loader)
+                print(bag_labels.shape)
+                print("---")
+                print(bag_labels)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"Aggregation Method: {self.args.aggregation}")
                 print(
