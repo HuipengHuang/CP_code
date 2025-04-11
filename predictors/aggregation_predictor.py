@@ -164,14 +164,11 @@ class KMeanPredictor(AggPredictor):
         # Initialize probabilities
         prob = torch.zeros(size=(1, self.num_classes), device=data_tensor.device)
 
-        # Process each cluster
         for i in range(self.n_cluster):
             mask = (cluster_ids == i)
             cluster_data = data_tensor[mask]
 
-            # Forward pass through network
             instance_prob = self.final_activation_function(self.net(cluster_data))
-            print(instance_prob.shape)
             if instance_prob[0, 1] < prob[0, 1]:
                 prob = instance_prob
 
