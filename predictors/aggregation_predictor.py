@@ -131,7 +131,8 @@ class MaxPredictor(AggPredictor):
             if prob[:, 1] < instance_prob[:, 1]:
                 prob = instance_prob
             j = i + 1
-        instance_prob = self.final_activation_function(self.net(data[:, j * 100: , :]))
-        if prob[:, 1] < instance_prob[:, 1]:
-            prob = instance_prob
+        if data.shape[1] % 100 != 0:
+            instance_prob = self.final_activation_function(self.net(data[:, j * 100: , :]))
+            if prob[:, 1] < instance_prob[:, 1]:
+                prob = instance_prob
         return prob
