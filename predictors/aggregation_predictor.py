@@ -124,27 +124,26 @@ class AggPredictor(Predictor):
 class MaxPredictor(AggPredictor):
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
         super(MaxPredictor, self).__init__(args, net, num_classes, final_activation_function, adapter)
-
+        self.length = args.length
     def get_prob(self, data):
         prob = torch.zeros(size=(1, self.num_classes), device=data.device)
         j = 0
-        for i in range(int(data.shape[1] / 100)):
-            instance_prob = self.final_activation_function(self.net(data[:, i * 100 : i * 100 + 100, :]))
+        for i in range(int(data.shape[1] / self.length)):
+            instance_prob = self.final_activation_function(self.net(data[:, i * self.length : i * self.length + self.length, :]))
             if prob[:, 1] < instance_prob[:, 1]:
                 prob = instance_prob
             j = i + 1
-        if data.shape[1] % 100 != 0:
-            instance_prob = self.final_activation_function(self.net(data[:, j * 100: , :]))
+        if data.shape[1] % self.length != 0:
+            instance_prob = self.final_activation_function(self.net(data[:, j * self.length: , :]))
             if prob[0, 1] < instance_prob[0, 1]:
                 prob = instance_prob
         return prob
 
 
 class KMeanPredictor(AggPredictor):
-    def __init__(self, args, net, num_classes, final_activation_function, adapter=None, n_cluster=3):
+    def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
         super(KMeanPredictor, self).__init__(args, net, num_classes, final_activation_function, adapter)
-        self.n_cluster = n_cluster
-
+        self.n_cluster = args.k
     def get_prob(self, data):
         """
         Args:

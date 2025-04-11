@@ -25,6 +25,8 @@ def save_exp_result(args, trainer, result_dict, path=None):
 
     save_path = os.path.join(path, month_day)
     save_path = os.path.join(save_path, args.test_score)
+    if args.aggregation is not None:
+        save_path = os.path.join(save_path, args.aggregation)
 
     i = 0
     while True:
