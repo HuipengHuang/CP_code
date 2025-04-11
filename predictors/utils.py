@@ -1,6 +1,6 @@
 from .mil_predictor import MilPredictor
 from .predictor import Predictor
-from .aggregation_predictor import MaxPredictor
+from .aggregation_predictor import MaxPredictor, KMeanPredictor
 import torch
 def get_predictor(args, net, num_classes, adapter=None, final_activation_function="softmax"):
     if args.model == "dsmil":
@@ -8,6 +8,8 @@ def get_predictor(args, net, num_classes, adapter=None, final_activation_functio
     elif args.aggregation is not None:
         if args.aggregation == "max":
             predictor = MaxPredictor(args, net, num_classes, final_activation_function, adapter)
+        elif args.aggregation == "kmean":
+            predictor = KMeanPredictor(args, net, num_classes, final_activation_function, adapter)
         else:
             raise NotImplementedError
     else:

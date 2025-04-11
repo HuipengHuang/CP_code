@@ -1,6 +1,7 @@
 from predictors.predictor import Predictor
 import torch
 from trainers.utils import five_scores
+from sklearn.cluster import KMeans
 
 class AggPredictor(Predictor):
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
@@ -133,6 +134,28 @@ class MaxPredictor(AggPredictor):
             j = i + 1
         if data.shape[1] % 100 != 0:
             instance_prob = self.final_activation_function(self.net(data[:, j * 100: , :]))
-            if prob[:, 1] < instance_prob[:, 1]:
+            if prob[0, 1] < instance_prob[0, 1]:
+                prob = instance_prob
+        return prob
+
+
+class KMeanPredictor(AggPredictor):
+    def __init__(self, args, net, num_classes, final_activation_function, adapter=None, n_cluster=3):
+        super(KMeanPredictor, self).__init__(args, net, num_classes, final_activation_function, adapter)
+        self.n_cluster = n_cluster
+
+    def get_prob(self, data):
+        data_np = data.cpu().numpy()
+        kmeans = KMeans(n_clusters=self.n_cluster)
+        kmeans.fit(data_np)
+        labels = torch.tensor(kmeans.labels_, device=data.device)
+
+        prob = torch.zeros(size=(1, self.num_classes), device=data.device)
+
+        for i in range(self.n_cluster):
+            mask = (labels == i)
+            cluster_data = data[mask]
+            instance_prob = self.final_activation_function(self.net(cluster_data))
+            if instance_prob[0, 1] < prob[0, 1]:
                 prob = instance_prob
         return prob
