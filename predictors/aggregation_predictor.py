@@ -1,3 +1,5 @@
+import math
+
 from predictors.predictor import Predictor
 import torch
 from trainers.utils import five_scores
@@ -6,9 +8,52 @@ from kmeans_pytorch import kmeans
 class AggPredictor(Predictor):
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
         super(AggPredictor, self).__init__(args, net, num_classes, final_activation_function, adapter)
+        self.agg_threshold = None
     def get_prob(self, data):
         raise NotImplementedError
 
+    def calibrate(self, cal_loader, alpha=None):
+        with torch.no_grad():
+            if alpha is None:
+                alpha = self.alpha
+            cal_score = torch.tensor([], device=self.device)
+            for data, target in cal_loader:
+                data = data.to(self.device)
+                target = target.to(self.device)
+
+                logits = self.net(data)
+                if self.adapter is not None:
+                    logits = self.adapter(logits)
+                prob = self.final_activation_function(logits)
+
+                batch_score = self.score.compute_target_score(prob, target)
+
+                cal_score = torch.cat((cal_score, batch_score), 0)
+
+            N = cal_score.shape[0]
+            threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
+            self.threshold = threshold
+
+            if alpha is None:
+                alpha = self.alpha
+            cal_score = torch.tensor([], device=self.device)
+            for data, target in cal_loader:
+                data = data.to(self.device)
+                target = target.to(self.device)
+
+                logits = self.net(data)
+                if self.adapter is not None:
+                    logits = self.adapter(logits)
+                prob = self.final_activation_function(logits)
+
+                batch_score = self.score.compute_target_score(prob, target)
+
+                cal_score = torch.cat((cal_score, batch_score), 0)
+
+            N = cal_score.shape[0]
+            agg_threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
+            self.agg_threshold = agg_threshold
+            return threshold
     def evaluate(self, test_loader):
         agg_result = self.evaluate_with_aggregation(test_loader)
         standard_result = self.standard_aggregation(test_loader)
@@ -18,7 +63,7 @@ class AggPredictor(Predictor):
     def evaluate_with_aggregation(self, test_loader):
         self.set_mode("test")
         self.net.eval()
-        if self.threshold is not None:
+        if self.agg_threshold is not None:
             bag_prob, bag_labels = [], []
             average_set_size = 0
             coverage = 0
@@ -32,9 +77,9 @@ class AggPredictor(Predictor):
 
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     score_tensor = self.score(prob)
-                    average_set_size += (score_tensor < self.threshold).sum().item()
+                    average_set_size += (score_tensor < self.agg_threshold).sum().item()
                     coverage += (
-                            score_tensor[torch.arange(score_tensor.shape[0]), target] < self.threshold).sum().item()
+                            score_tensor[torch.arange(score_tensor.shape[0]), target] < self.agg_threshold).sum().item()
 
                 coverage = coverage / len(test_loader)
                 average_set_size = average_set_size / len(test_loader)

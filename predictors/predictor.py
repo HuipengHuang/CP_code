@@ -32,38 +32,6 @@ class Predictor:
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
             Compute scores for all the calibration data and take the (1 - alpha) quantile."""
-        self.set_mode("test")
-        if alpha is None:
-            alpha = self.alpha
-
-        if self.adapter:
-            threshold = self.calibrate_with_adapter(cal_loader, alpha)
-        else:
-            threshold = self.calibrate_without_adapter(cal_loader, alpha)
-        self.threshold = threshold
-        return threshold
-
-    def calibrate_with_adapter(self, cal_loader, alpha):
-        with torch.no_grad():
-            if alpha is None:
-                alpha = self.alpha
-            cal_score = torch.tensor([], device=self.device)
-            for data, target in cal_loader:
-                data = data.to(self.device)
-                target = target.to(self.device)
-
-                logits = self.adapter(self.net(data))
-                prob = self.final_activation_function(logits)
-
-                batch_score = self.score.compute_target_score(prob, target)
-
-                cal_score = torch.cat((cal_score, batch_score), 0)
-
-            N = cal_score.shape[0]
-            threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
-            return threshold
-
-    def calibrate_without_adapter(self, cal_loader, alpha=None):
         with torch.no_grad():
             if alpha is None:
                 alpha = self.alpha
@@ -73,6 +41,8 @@ class Predictor:
                 target = target.to(self.device)
 
                 logits = self.net(data)
+                if self.adapter is not None:
+                    logits = self.adapter(logits)
                 prob = self.final_activation_function(logits)
 
                 batch_score = self.score.compute_target_score(prob, target)
@@ -81,7 +51,10 @@ class Predictor:
 
             N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
+            self.threshold = threshold
             return threshold
+
+
 
     def calibrate_batch_logit(self, logits, target, alpha):
         """Design for conformal training, which needs to compute threshold in every batch"""
