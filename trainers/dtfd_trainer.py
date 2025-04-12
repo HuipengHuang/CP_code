@@ -172,78 +172,91 @@ class DFDT_Trainer:
             num_bag = len(ds)
 
             numIter = num_bag // self.bag_size
-            tIDX = list(RandomSampler(range(num_bag), numIter))
+            tIDX = list(RandomSampler(range(num_bag)))
 
             for idx in range(numIter):
                 tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
+                tlabel = []
+                batch_feat = []
+                for i in tidx_slide:
+                    data, target = ds[i]
+                    tlabel.append(target)
+                    batch_feat.append(data)
 
-                for tidx, bag_idx in enumerate(tidx_slide):
-                    slide_pseudo_feat = []
-                    slide_sub_preds = []
-                    slide_sub_labels = []
+                label_tensor = torch.LongTensor(tlabel).to(self.device)
 
-                    tfeat_tensor, tslideLabel = ds[bag_idx].to(self.device)
+                for tidx, tfeat in enumerate(batch_feat):
+                    tslideLabel = label_tensor[tidx].unsqueeze(0)
+                    midFeat = self.dimReduction(tfeat)
 
-                    feat_index = list(range(tfeat_tensor.shape[0]))
-                    if self.shuffle:
+                    AA = self.attention(midFeat, isNorm=False).squeeze(0)  ## N
+
+                    allSlide_pred_softmax = []
+
+                    for jj in range(2):
+
+                        feat_index = list(range(tfeat.shape[0]))
                         random.shuffle(feat_index)
-                    index_chunk_list = np.array_split(feat_index, num_bag)
+                        index_chunk_list = np.array_split(np.array(feat_index), self.numgroup)
+                        index_chunk_list = [sst.tolist() for sst in index_chunk_list]
 
-                    index_chunk_list = [sst.tolist() for sst in index_chunk_list]
+                        slide_d_feat = []
+                        slide_sub_preds = []
+                        slide_sub_labels = []
 
-                    all_slide_pred_prob = []
+                        for tindex in index_chunk_list:
+                            slide_sub_labels.append(tslideLabel)
+                            idx_tensor = torch.LongTensor(tindex).to(self.device)
+                            tmidFeat = midFeat.index_select(dim=0, index=idx_tensor)
 
-                    for tindex in index_chunk_list:
-                        slide_sub_labels.append(tslideLabel)
-                        subFeat_tensor = torch.index_select(tfeat_tensor, dim=0,
-                                                            index=torch.LongTensor(tindex).to(self.device))
-                        tmidFeat = self.dimReduction(subFeat_tensor)
-                        tAA = self.attention(tmidFeat).squeeze(0)
+                            tAA = AA.index_select(dim=0, index=idx_tensor)
+                            tAA = torch.softmax(tAA, dim=0)
+                            tattFeats = torch.einsum('ns,n->ns', tmidFeat, tAA)  ### n x fs
+                            tattFeat_tensor = torch.sum(tattFeats, dim=0).unsqueeze(0)  ## 1 x fs
 
-                        tattFeats = torch.einsum('ns,n->ns', tmidFeat, tAA)
-                        tattFeat_tensor = torch.sum(tattFeats, dim=0).squeeze(0)
-                        tPredict = self.classifier(tattFeat_tensor)
-                        slide_sub_preds.append(tPredict)
+                            tPredict = self.classifier(tattFeat_tensor)  ### 1 x 2
+                            slide_sub_preds.append(tPredict)
 
-                        patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(0)  ###  cls x n
-                        patch_pred_logits = torch.transpose(patch_pred_logits, 0, 1)  ## n x cls
-                        patch_pred_prob = self.activation_function(patch_pred_logits)  ## n x cls
+                            patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(0)  ###  cls x n
+                            patch_pred_logits = torch.transpose(patch_pred_logits, 0, 1)  ## n x cls
+                            patch_pred_softmax = torch.softmax(patch_pred_logits, dim=1)  ## n x cls
 
-                        _, sort_idx = torch.sort(patch_pred_prob[:, -1], descending=True)
-                        topk_idx_max = sort_idx[:1].long()
-                        topk_idx_min = sort_idx[-1:].long()
-                        topk_idx = torch.cat([topk_idx_max, topk_idx_min], dim=0)
+                            _, sort_idx = torch.sort(patch_pred_softmax[:, -1], descending=True)
+                            instance_per_group = 1
 
-                        if self.distill == 'MaxMinS':
+                            if self.distill == 'MaxMinS':
+                                topk_idx_max = sort_idx[:instance_per_group].long()
+                                topk_idx_min = sort_idx[-instance_per_group:].long()
+                                topk_idx = torch.cat([topk_idx_max, topk_idx_min], dim=0)
+                                d_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)
+                                slide_d_feat.append(d_inst_feat)
+                            elif self.distill == 'MaxS':
+                                topk_idx_max = sort_idx[:instance_per_group].long()
+                                topk_idx = topk_idx_max
+                                d_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)
+                                slide_d_feat.append(d_inst_feat)
+                            elif self.distill == 'AFS':
+                                slide_d_feat.append(tattFeat_tensor)
 
-                            MaxMin_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)  ##########################
-                            slide_pseudo_feat.append(MaxMin_inst_feat)
-                        elif self.distill == 'MaxS':
-                            max_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx_max)
-                            slide_pseudo_feat.append(max_inst_feat)
-                        elif self.distill == 'AFS':
-                            af_inst_feat = tattFeat_tensor
-                            slide_pseudo_feat.append(af_inst_feat)
+                        slide_d_feat = torch.cat(slide_d_feat, dim=0)
+                        slide_sub_preds = torch.cat(slide_sub_preds, dim=0)
+                        slide_sub_labels = torch.cat(slide_sub_labels, dim=0)
 
-                    slide_d_feat = torch.cat(slide_d_feat, dim=0)
-                    slide_sub_preds = torch.cat(slide_sub_preds, dim=0)
-                    slide_sub_labels = torch.cat(slide_sub_labels, dim=0)
+                        gPred_0 = torch.cat([gPred_0, slide_sub_preds], dim=0)
+                        gt_0 = torch.cat([gt_0, slide_sub_labels], dim=0)
+                        loss0 = self.loss_function(slide_sub_preds, slide_sub_labels).mean()
+                        test_loss0 += loss0.item()
 
-                    gPred_0 = torch.cat([gPred_0, slide_sub_preds], dim=0)
-                    gt_0 = torch.cat([gt_0, slide_sub_labels], dim=0)
-                    loss0 = self.loss_function(slide_sub_preds, slide_sub_labels)
-                    test_loss0 += loss0.item()
+                        gSlidePred = self.attCls(slide_d_feat)
+                        allSlide_pred_softmax.append(torch.softmax(gSlidePred, dim=1))
 
-                    gSlidePred = self.attCls(slide_d_feat)
-                    allSlide_pred_prob.append(self.activation_function(gSlidePred, dim=1))
+                    allSlide_pred_softmax = torch.cat(allSlide_pred_softmax, dim=0)
+                    allSlide_pred_softmax = torch.mean(allSlide_pred_softmax, dim=0).unsqueeze(0)
+                    gPred_1 = torch.cat([gPred_1, allSlide_pred_softmax], dim=0)
+                    gt_1 = torch.cat([gt_1, tslideLabel], dim=0)
 
-                allSlide_pred_prob = torch.cat(allSlide_pred_prob, dim=0)
-                allSlide_pred_prob = torch.mean(allSlide_pred_prob, dim=0).unsqueeze(0)
-                gPred_1 = torch.cat([gPred_1, allSlide_pred_prob], dim=0)
-                gt_1 = torch.cat([gt_1, tslideLabel], dim=0)
-
-                loss1 = F.nll_loss(allSlide_pred_prob, tslideLabel)
-                test_loss1 += loss1.item()
+                    loss1 = F.nll_loss(allSlide_pred_softmax, tslideLabel)
+                    test_loss1 += loss1.item()
 
         gPred_0 = torch.softmax(gPred_0, dim=1)
         gPred_0 = gPred_0[:, -1]
