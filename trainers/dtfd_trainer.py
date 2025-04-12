@@ -19,6 +19,7 @@ class DFDT_Trainer:
     Trainer class that implement all the functions regarding training.
     All the arguments are passed through args."""
     def __init__(self, args, num_classes):
+        self.device = torch.device(f"cuda:{args.gpu}")
         final_activation_function = args.final_activation_function
         if final_activation_function == "softmax":
             self.activation_function = nn.Softmax(dim=-1)
@@ -95,7 +96,8 @@ class DFDT_Trainer:
                 slide_sub_preds = []
                 slide_sub_labels = []
 
-                tfeat_tensor, tslideLabel = ds[bag_idx].to(self.device)
+                tfeat_tensor, tslideLabel = ds[bag_idx]
+                tfeat_tensor, tslideLabel = tfeat_tensor.to(self.device), tslideLabel.to(self.device)
 
                 feat_index = list(range(tfeat_tensor.shape[0]))
                 if self.shuffle:
