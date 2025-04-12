@@ -60,7 +60,7 @@ class DFDT_Trainer:
             self.optimizer1 = torch.optim.Adam(self.attCls.parameters(), lr=args.learning_rate,
                                               weight_decay=args.weight_decay)
 
-        if args.scheduler == 'cosine':
+        if args.learning_rate_scheduler == 'cosine':
             self.scheduler0 = CosineAnnealingLR(self.optimizer0, T_max=args.epoch, eta_min=0)
             self.scheduler1 = CosineAnnealingLR(self.optimizer1, T_max=args.epoch, eta_min=0)
         else:
