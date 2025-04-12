@@ -97,8 +97,7 @@ class DFDT_Trainer:
                 slide_sub_labels = []
 
                 tfeat_tensor, tslideLabel = ds[bag_idx]
-                print("tslidelable")
-                print(tslideLabel)
+
                 tfeat_tensor, tslideLabel = tfeat_tensor.to(self.device), tslideLabel.to(self.device)
 
                 feat_index = list(range(tfeat_tensor.shape[0]))
@@ -150,8 +149,8 @@ class DFDT_Trainer:
 
                 ## optimization for the second tier
                 gSlidePred = self.attCls(slide_pseudo_feat)
-                print(gSlidePred.shape)
-                print(tslideLabel.shape)
+                print("loss")
+                print(tslideLabel)
                 loss1 = self.loss_function(gSlidePred, tslideLabel).mean()
                 self.optimizer1.zero_grad()
                 loss1.backward()
