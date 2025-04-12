@@ -6,17 +6,31 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import RandomSampler
 from .utils import get_cam_1d, eval_metric
 from tqdm import tqdm
-from .trainer import Trainer
 import models.DTFD as DTFD
 import torch.nn.functional as F
+from .early_stopping import EarlyStopping
+from loss.utils import get_loss_function
+from predictors.utils import get_predictor
 
-
-class DFDT_Trainer(Trainer):
+class DFDT_Trainer:
     """
     Trainer class that implement all the functions regarding training.
     All the arguments are passed through args."""
     def __init__(self, args, num_classes):
         super().__init__(args, num_classes)
+
+        self.predictor = get_predictor(args, None, num_classes=num_classes,
+                                       adapter=None,
+                                       final_activation_function=args.final_activation_function)
+        self.predictor.set_mode("train")
+        self.num_classes = num_classes
+        self.loss_function = get_loss_function(args, self.predictor)
+        if args.patience:
+            self.early_stopping = EarlyStopping(patience=args.patience)
+        else:
+            self.early_stopping = None
+        self.args = args
+
         self.numgroup = args.numgroup
         self.distill = args.distill
         self.bag_size = args.bag_size
@@ -66,7 +80,7 @@ class DFDT_Trainer(Trainer):
         numIter = num_bag // self.bag_size
         tIDX = list(RandomSampler(range(num_bag), numIter))
 
-        for idx in range(numIter):
+        for idx in tqdm(range(numIter)):
             tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
 
             for tidx, bag_idx in enumerate(tidx_slide):

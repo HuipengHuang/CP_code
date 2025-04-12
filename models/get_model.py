@@ -9,6 +9,8 @@ def build_mil_model(args, num_classes):
     device = torch.device(f"cuda:{args.gpu}")
     net = None
 
+
+
     if model_type == "attention":
         net = attention_base_model.AttentionModel(input_dim=args.input_dimension)
 
