@@ -49,6 +49,7 @@ parser.add_argument("--length", default=None, type=int, help="length of each sub
 parser.add_argument("--numgroup", default=None, type=int)
 parser.add_argument("--distill", default=None, type=str, choices=["MaxMinS", "MaxS", "AFS"])
 parser.add_argument("--shuffle", default=None, type=str)
+parser.add_argument("--bag_size", default=None, type=int)
 
 #  Hyperparameters for Conformal Prediction
 parser.add_argument("--alpha", type=float, default=0.1, help="Error Rate")
