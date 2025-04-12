@@ -85,7 +85,7 @@ class DFDT_Trainer:
         num_bag = len(ds)
 
         numIter = num_bag // self.bag_size
-        tIDX = list(RandomSampler(range(num_bag), numIter))
+        tIDX = list(RandomSampler(range(num_bag)))
 
         for idx in tqdm(range(numIter)):
             tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
