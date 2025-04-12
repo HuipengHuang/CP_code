@@ -17,8 +17,6 @@ class DFDT_Trainer:
     Trainer class that implement all the functions regarding training.
     All the arguments are passed through args."""
     def __init__(self, args, num_classes):
-        super().__init__(args, num_classes)
-
         self.predictor = get_predictor(args, None, num_classes=num_classes,
                                        adapter=None,
                                        final_activation_function=args.final_activation_function)
