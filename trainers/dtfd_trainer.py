@@ -11,15 +11,24 @@ import torch.nn.functional as F
 from .early_stopping import EarlyStopping
 from loss.utils import get_loss_function
 from predictors.utils import get_predictor
+import torch.nn as nn
+
 
 class DFDT_Trainer:
     """
     Trainer class that implement all the functions regarding training.
     All the arguments are passed through args."""
     def __init__(self, args, num_classes):
+        final_activation_function = args.final_activation_function
+        if final_activation_function == "softmax":
+            self.activation_function = nn.Softmax(dim=-1)
+        elif final_activation_function == "sigmoid":
+            self.activation_function = nn.Sigmoid()
+        else:
+            raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
         self.predictor = get_predictor(args, None, num_classes=num_classes,
                                        adapter=None,
-                                       final_activation_function=args.final_activation_function)
+                                       final_activation_function=final_activation_function)
         self.predictor.set_mode("train")
         self.num_classes = num_classes
         self.loss_function = get_loss_function(args, self.predictor)
@@ -250,7 +259,6 @@ class DFDT_Trainer:
         return accuracy1, auc1, precision1, recall1, F11, test_loss1
 
     def train(self, train_loader, epochs, val_loader=None):
-        self.net.train()
         if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
                 self.train_loop(train_loader, epoch)
@@ -263,12 +271,3 @@ class DFDT_Trainer:
                     break
 
 
-
-    def set_train_mode(self, train_net, train_adapter):
-        assert self.adapter is not None, print("The trainer does not have an adapter.")
-        if not train_adapter:
-            for param in self.adapter.adapter_net.parameters():
-                param.requires_grad = train_adapter
-        if not train_net:
-            for param in self.net.parameters():
-                param.requires_grad = train_net
