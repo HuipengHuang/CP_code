@@ -49,10 +49,10 @@ class DFDT_Trainer:
         assert self.numgroup is not None, print("numgroup could not be None.")
         assert self.distill is not None, print("distill could not be None.")
 
-        self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout)
-        self.attention = DTFD.attention.Attention_Gated(512)
-        self.dimReduction = DTFD.network.DimReduction(args.input_dimension, 512, dropout=args.dropout)
-        self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout)
+        self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout).to(self.device)
+        self.attention = DTFD.attention.Attention_Gated(512).to(self.device)
+        self.dimReduction = DTFD.network.DimReduction(args.input_dimension, 512, dropout=args.dropout).to(self.device)
+        self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout).to(self.device)
         trainable_parameter = []
         trainable_parameter += list(self.classifier.parameters())
         trainable_parameter += list(self.attention.parameters())
