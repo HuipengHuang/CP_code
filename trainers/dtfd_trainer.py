@@ -138,6 +138,7 @@ class DFDT_Trainer:
                         af_inst_feat = tattFeat_tensor
                         slide_pseudo_feat.append(af_inst_feat)
 
+                slide_pseudo_feat = torch.cat(slide_pseudo_feat, dim=0)
                 slide_sub_preds = torch.stack(slide_sub_preds, dim=0)  ### numGroup x fs
                 slide_sub_labels = torch.tensor(slide_sub_labels, device=slide_sub_preds.device)  ### numGroup
 
