@@ -116,7 +116,7 @@ class DFDT_Trainer:
                     tattFeats = torch.einsum('ns,n->ns', tmidFeat, tAA)
                     tattFeat_tensor = torch.sum(tattFeats, dim=0)
                     tPredict = self.classifier(tattFeat_tensor)
-
+                    print(tPredict.shape)
                     slide_sub_preds.append(tPredict)
 
                     patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(0)  ###  cls x n
