@@ -120,7 +120,7 @@ class DFDT_Trainer:
 
                     patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(0)  ###  cls x n
                     patch_pred_logits = torch.transpose(patch_pred_logits, 0, 1)  ## n x cls
-                    patch_pred_prob = self.activation_function(patch_pred_logits, dim=1)  ## n x cls
+                    patch_pred_prob = self.activation_function(patch_pred_logits)  ## n x cls
 
                     _, sort_idx = torch.sort(patch_pred_prob[:, -1], descending=True)
                     topk_idx_max = sort_idx[:1].long()
@@ -204,7 +204,7 @@ class DFDT_Trainer:
 
                         patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(0)  ###  cls x n
                         patch_pred_logits = torch.transpose(patch_pred_logits, 0, 1)  ## n x cls
-                        patch_pred_prob = self.activation_function(patch_pred_logits, dim=1)  ## n x cls
+                        patch_pred_prob = self.activation_function(patch_pred_logits)  ## n x cls
 
                         _, sort_idx = torch.sort(patch_pred_prob[:, -1], descending=True)
                         topk_idx_max = sort_idx[:1].long()
