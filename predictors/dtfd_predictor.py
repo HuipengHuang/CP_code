@@ -6,7 +6,7 @@ import torchsort
 from trainers.utils import five_scores
 
 class DTFDPredictor:
-    def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
+    def __init__(self, args, net_list, num_classes, final_activation_function, adapter=None):
         self.args = args
         self.test_score = get_score(args)
         if args.train_score is None:
@@ -18,7 +18,7 @@ class DTFDPredictor:
         self.score = None
         self.threshold = None
         self.alpha = args.alpha
-        self.net = net
+        self.classifier, self.attention, self.dimReduction, self.attCls = net_list
         self.num_classes = num_classes
         if final_activation_function == "softmax":
             self.final_activation_function = nn.Softmax(dim=-1)

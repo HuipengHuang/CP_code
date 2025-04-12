@@ -269,6 +269,7 @@ class DFDT_Trainer:
                 self.train_loop(train_loader, epoch)
         else:
             for epoch in range(epochs):
+                accuracy, auc_value, precision, recall, fscore, loss = self.val_loop(val_loader)
                 self.train_loop(train_loader, epoch)
                 accuracy, auc_value, precision, recall, fscore, loss = self.val_loop(val_loader)
                 stop = self.early_stopping(loss, epoch)
