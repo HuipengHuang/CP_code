@@ -148,6 +148,8 @@ class DFDT_Trainer:
 
                 ## optimization for the second tier
                 gSlidePred = self.attCls(slide_pseudo_feat)
+                print(gSlidePred.shape)
+                print(tslideLabel.shape)
                 loss1 = self.loss_function(gSlidePred, tslideLabel).mean()
                 self.optimizer1.zero_grad()
                 loss1.backward()
