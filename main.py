@@ -28,6 +28,7 @@ parser.add_argument("--patience", default=None, type=int)
 parser.add_argument("--aggregation","-agg", default=None, type=str, choices=["max", "kmean"])
 parser.add_argument("--kfold", default=None, type=int)
 parser.add_argument("--ktime", default=1, type=int)
+parser.add_argument("--dropout", default=None, type=float)
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
