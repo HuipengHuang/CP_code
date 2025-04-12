@@ -7,14 +7,15 @@ from common import algorithm
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--model", type=str, default="resnet50", help='Choose neural network architecture.')
-parser.add_argument("--gpu", type=int,help="CUDA device ID (e.g., 0, 1, etc.)")
-parser.add_argument("--dataset", type=str, default="cifar100", choices=["cifar10", "cifar100", "imagenet", "mnist_bag", "camelyon17", "camelyon16", "tcga_lung_cancer"],
+parser.add_argument("--gpu", type=int, help="CUDA device ID (e.g., 0, 1, etc.)")
+parser.add_argument("--dataset", type=str, default="cifar100",
+                    choices=["cifar10", "cifar100", "imagenet", "mnist_bag", "camelyon17", "camelyon16", "tcga_lung_cancer"],
                     help="Choose dataset for training.")
 parser.add_argument('--seed', type=int, default=None)
 parser.add_argument("--pretrained", default="False", type=str, choices=["True", "False"])
 parser.add_argument("--save", default="False", choices=["True", "False"], type=str)
 parser.add_argument("--save_model", default=None, choices=["True", "False"])
-parser.add_argument("--algorithm",'-alg', default="cp", choices=["standard", "cp", "uatr"],
+parser.add_argument("--algorithm", '-alg', default="cp", choices=["standard", "cp", "uatr"],
                     help="standard means only evaluate top1 accuracy."
                          "cp means use conformal prediction at evaluation stage. "
                          "Uncertainty aware training use uatr. Otherwise use standard")
@@ -25,8 +26,6 @@ parser.add_argument("--extract_feature_model", default=None, choices=["resnet18"
 parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
 parser.add_argument("--patience", default=None, type=int)
 parser.add_argument("--aggregation","-agg", default=None, type=str, choices=["max", "kmean"])
-parser.add_argument("--k", default=None, type=int)
-parser.add_argument("--length", default=None, type=int)
 parser.add_argument("--kfold", default=None, type=int)
 parser.add_argument("--ktime", default=1, type=int)
 
@@ -45,6 +44,11 @@ parser.add_argument("--loss", type=str,default='standard', choices=['standard', 
 #  Hyperparameters for Multi-instance learning
 parser.add_argument("--multi_instance_learning", "-mil", default=None, type=str, choices=["True", "False"],)
 parser.add_argument("--compute_auc","-auc", default=None, type=str, choices=["True", "False"],help="Compute AUC or not.")
+parser.add_argument("--k", default=None, type=int, help="k for KMeans aggregation")
+parser.add_argument("--length", default=None, type=int, help="length of each subbag")
+parser.add_argument("--numgroup", default=None, type=int)
+parser.add_argument("--distill", default=None, type=str, choices=["MaxMinS", "MaxS", "AFS"])
+parser.add_argument("--shuffle", default=None, type=str)
 
 #  Hyperparameters for Conformal Prediction
 parser.add_argument("--alpha", type=float, default=0.1, help="Error Rate")

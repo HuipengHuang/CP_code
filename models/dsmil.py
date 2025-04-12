@@ -87,3 +87,5 @@ class MILNet(nn.Module):
         prediction_bag, A, B = self.b_classifier(feats, classes)
 
         return classes, prediction_bag, A, B
+
+

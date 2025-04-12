@@ -7,7 +7,7 @@ from predictors.utils import get_predictor
 from loss.utils import get_loss_function
 from .cadapter import CAdapter, Adapter
 from .early_stopping import EarlyStopping
-
+import torch.nn as nn
 
 class Trainer:
     """
@@ -29,6 +29,12 @@ class Trainer:
             self.scheduler = None
 
         final_activation_function = args.final_activation_function
+        if final_activation_function == "softmax":
+            self.activation_function = nn.Softmax(dim=-1)
+        elif final_activation_function == "sigmoid":
+            self.activation_function = nn.Sigmoid()
+        else:
+            raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
 
         if args.cadapter == "True":
             self.adapter = CAdapter(num_classes, num_classes, self.device)
@@ -57,24 +63,29 @@ class Trainer:
             self.early_stopping = None
         self.args = args
 
-    def train_batch(self, data, target):
-        data = data.to(self.device)
-        target = target.to(self.device)
-
-        logits = self.net(data)
-        if self.adapter:
-            logits = self.adapter(logits)
-
-        loss = self.loss_function(logits, target)
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-        return loss
 
     def train_loop(self, train_loader, epoch):
             self.net.train()
             for data, target in tqdm(train_loader, desc=f"Epoch: {epoch + 1} / {self.args.epochs}"):
-                self.train_batch(data, target)
+                data = data.to(self.device)
+                target = target.to(self.device)
+
+                if self.args.model == "dsmil":
+                    output_list = self.net(data)
+                    loss = self.loss_function(output_list, target)
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+
+                else:
+                    logits = self.net(data)
+                    if self.adapter:
+                        logits = self.adapter(logits)
+
+                    loss = self.loss_function(logits, target)
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
 
             if self.scheduler:
                 self.scheduler.step()
@@ -90,12 +101,19 @@ class Trainer:
                 data = data.to(self.device)
                 target = target.to(self.device)
 
-                test_logits = self.net(data)
+                if self.args.model == "dsmil":
+                    output_list = self.net(data)
+                    instance_logits, bag_logits, _, _ = output_list
 
-                test_loss = self.loss_function(test_logits, target)
-                loss += test_loss.item()
-                bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+                    test_loss = self.loss_function(output_list, target)
+                    loss += test_loss.item()
+                    bag_prob.append(self.activation_function(bag_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+                else:
+                    test_logits = self.net(data)
 
+                    test_loss = self.loss_function(test_logits, target)
+                    loss += test_loss.item()
+                    bag_prob.append(self.activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 
             accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
             loss = loss / len(val_loader.dataset)

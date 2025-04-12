@@ -40,10 +40,14 @@ class AggPredictor(Predictor):
             for data, target in cal_loader:
                 data = data.to(self.device)
                 target = target.to(self.device)
+                if self.args.model == "dsmil":
+                    logits = self.net(data)[1]
+                else:
+                    logits = self.net(data)
 
-                logits = self.net(data)
                 if self.adapter is not None:
                     logits = self.adapter(logits)
+
                 prob = self.final_activation_function(logits)
 
                 batch_score = self.score.compute_target_score(prob, target)
@@ -172,14 +176,20 @@ class MaxPredictor(AggPredictor):
         self.length = args.length
     def get_prob(self, data):
         prob = torch.zeros(size=(1, self.num_classes), device=data.device)
-        j = 0
         for i in range(int(data.shape[1] / self.length)):
-            instance_prob = self.final_activation_function(self.net(data[:, i * self.length : i * self.length + self.length, :]))
+            if self.args.model == "dsmil":
+                logits = self.net(data[:, i * self.length : i * self.length + self.length, :])[1]
+            else:
+                logits = self.net(data[:, i * self.length : i * self.length + self.length, :])
+
+            instance_prob = self.final_activation_function(logits)
+
             if prob[:, 1] < instance_prob[:, 1]:
                 prob = instance_prob
-            j = i + 1
+        i = i + 1
+
         if data.shape[1] % self.length != 0:
-            instance_prob = self.final_activation_function(self.net(data[:, j * self.length: , :]))
+            instance_prob = self.final_activation_function(self.net(data[:, i * self.length: , :]))
             if prob[0, 1] < instance_prob[0, 1]:
                 prob = instance_prob
         return prob
@@ -212,8 +222,12 @@ class KMeanPredictor(AggPredictor):
         for i in range(self.n_cluster):
             mask = (cluster_ids == i)
             cluster_data = data_tensor[mask]
+            if self.args.model == "dsmil":
+                logits = self.net(cluster_data)[1]
+            else:
+                logits = self.net(cluster_data)
 
-            instance_prob = self.final_activation_function(self.net(cluster_data))
+            instance_prob = self.final_activation_function(logits)
             if instance_prob[0, 1] > prob[0, 1]:
                 prob = instance_prob
 

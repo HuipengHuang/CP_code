@@ -5,7 +5,7 @@ import math
 import torchsort
 from trainers.utils import five_scores
 
-class Predictor:
+class DTFDPredictor:
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
         self.args = args
         self.test_score = get_score(args)

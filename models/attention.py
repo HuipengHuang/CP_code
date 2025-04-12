@@ -118,7 +118,7 @@ class CrMSA(nn.Module):
 
 """
         logits_d = torch.sum(logits, dim=-2)  # (B, L2, K)
-        W_d = (logits_d - logits_d.min(dim=-1, keepdim=True)[0]) / \
+        W_d = (logits_d - logits_d.min(dim=-1, keepdim=True)[0]) / 
               (logits_d.max(dim=-1, keepdim=True)[0] - logits_d.min(dim=-1, keepdim=True)[0] + 1e-8)
         W_d = W_d.unsqueeze(-1)  # (B, L2, K, 1)
         W_d_t = W_d.transpose(-1, -2)  # (B, L2, 1, K)
