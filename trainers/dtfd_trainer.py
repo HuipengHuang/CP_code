@@ -140,6 +140,8 @@ class DFDT_Trainer:
 
                 slide_sub_preds = torch.cat(slide_sub_preds, dim=0)  ### numGroup x fs
                 slide_sub_labels = torch.tensor(slide_sub_labels, device=slide_sub_preds.device)  ### numGroup
+                print(slide_sub_preds.shape)
+                print(slide_sub_labels.shape)
                 loss0 = self.loss_function(slide_sub_preds, slide_sub_labels).mean()
                 self.optimizer0.zero_grad()
                 loss0.backward(retain_graph=True)
