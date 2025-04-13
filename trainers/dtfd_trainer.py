@@ -84,8 +84,8 @@ class DFDT_Trainer:
                                               weight_decay=args.weight_decay)
 
         if args.learning_rate_scheduler == 'cosine':
-            self.scheduler0 = CosineAnnealingLR(self.optimizer0, T_max=args.epoch, eta_min=0)
-            self.scheduler1 = CosineAnnealingLR(self.optimizer1, T_max=args.epoch, eta_min=0)
+            self.scheduler0 = CosineAnnealingLR(self.optimizer0, T_max=args.epochs, eta_min=0)
+            self.scheduler1 = CosineAnnealingLR(self.optimizer1, T_max=args.epochs, eta_min=0)
         else:
             self.scheduler0 = None
             self.scheduler1 = None
