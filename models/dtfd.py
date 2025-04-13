@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import random
 import numpy as np
+from torch.nn.modules.module import T
 
 from trainers.utils import get_cam_1d
 
@@ -71,3 +72,9 @@ class DTFDMIL(nn.Module):
         gSlidePred = self.attCls(slide_pseudo_feat)
         """return instance logits and bag logits"""
         return slide_sub_preds, gSlidePred
+
+    def eval(self):
+        self.classifier.eval()
+        self.attCls.eval()
+        self.dimReduction.eval()
+        self.attention.eval()
