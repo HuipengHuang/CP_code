@@ -7,7 +7,7 @@ from trainers.utils import get_cam_1d
 
 
 class DTFDMIL(nn.Module):
-    def __init__(self, classifier, attention, dimReduction, attCls, numgroup=4, distill="MaxMinS"):
+    def __init__(self, classifier, attention, dimReduction, attCls, numgroup=4, distill="MaxMinS", shuffle=True):
         super(DTFDMIL, self).__init__()
         self.classifier = classifier
         self.attention = attention
@@ -15,7 +15,7 @@ class DTFDMIL(nn.Module):
         self.attCls = attCls
         self.distill = distill
         self.numgrop = numgroup
-
+        self.shuffle = shuffle
 
     def forward(self, tfeat_tensor):
         slide_pseudo_feat = []

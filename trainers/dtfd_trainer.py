@@ -36,6 +36,10 @@ class DFDT_Trainer:
             self.distill = args.distill
         else:
             self.distill = "MaxMinS"
+        if args.shuffle == "True":
+            self.shuffle = True
+        else:
+            self.shuffle = False
 
         self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout if args.dropout else 0).to(self.device)
         self.attention = DTFD.attention.Attention_Gated(512).to(self.device)
@@ -43,7 +47,7 @@ class DFDT_Trainer:
         self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout if args.dropout else 0).to(
             self.device)
         self.dtfd = dtfd.DTFDMIL(self.classifier, self.attention, self.dimReduction, self.attCls, self.numgroup,
-                                 self.distill)
+                                 self.distill, self.shuffle)
         trainable_parameter = []
         trainable_parameter += list(self.classifier.parameters())
         trainable_parameter += list(self.attention.parameters())
@@ -64,10 +68,7 @@ class DFDT_Trainer:
             self.bag_size = args.bag_size
         else:
             self.bag_size = 4
-        if args.shuffle == "True":
-            self.shuffle = True
-        else:
-            self.shuffle = False
+
 
 
         self.optimizer = None
