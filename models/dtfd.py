@@ -16,6 +16,7 @@ class DTFDMIL(nn.Module):
         self.distill = distill
         self.numgroup = numgroup
         self.shuffle = shuffle
+        self.device = device
 
     def forward(self, tfeat_tensor):
         slide_pseudo_feat = []
