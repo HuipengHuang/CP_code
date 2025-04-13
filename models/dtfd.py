@@ -7,7 +7,7 @@ from trainers.utils import get_cam_1d
 
 
 class DTFDMIL(nn.Module):
-    def __init__(self, classifier, attention, dimReduction, attCls, numgroup=4, distill="MaxMinS", shuffle=True):
+    def __init__(self, device, classifier, attention, dimReduction, attCls, numgroup=4, distill="MaxMinS", shuffle=True):
         super(DTFDMIL, self).__init__()
         self.classifier = classifier
         self.attention = attention
