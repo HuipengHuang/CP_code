@@ -53,7 +53,7 @@ class DFDT_Trainer:
         trainable_parameter += list(self.attention.parameters())
         trainable_parameter += list(self.dimReduction.parameters())
 
-        self.predictor = get_predictor(args, dtfd, num_classes=num_classes,
+        self.predictor = get_predictor(args, self.dtfdmil, num_classes=num_classes,
                                        adapter=None,
                                        final_activation_function=final_activation_function)
         self.predictor.set_mode("train")
