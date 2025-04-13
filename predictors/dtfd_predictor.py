@@ -46,6 +46,9 @@ class DTFDPredictor:
             for data, target in cal_loader:
                 instance_logit, bag_logit = self.dtfdmil(data.squeeze(0))
                 prob = self.final_activation_function(bag_logit)
+                print("---")
+                print(prob)
+                print(target)
                 score = self.score(prob, target)
                 cal_score = torch.cat([cal_score, score], dim=0)
 
