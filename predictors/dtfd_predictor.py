@@ -49,7 +49,7 @@ class DTFDPredictor:
                 print("---")
                 print(prob)
                 print(target)
-                score = self.score(prob, target)
+                score = self.score(prob=prob, target=target)
                 cal_score = torch.cat([cal_score, score], dim=0)
 
             N = cal_score.shape[0]
