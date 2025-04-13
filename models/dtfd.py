@@ -14,7 +14,7 @@ class DTFDMIL(nn.Module):
         self.dimReduction = dimReduction
         self.attCls = attCls
         self.distill = distill
-        self.numgrop = numgroup
+        self.numgroup = numgroup
         self.shuffle = shuffle
 
     def forward(self, tfeat_tensor):
