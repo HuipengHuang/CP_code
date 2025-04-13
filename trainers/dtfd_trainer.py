@@ -109,7 +109,7 @@ class DFDT_Trainer:
                 tfeat_tensor, tslideLabel = tfeat_tensor.to(self.device), tslideLabel.to(self.device)
 
                 slide_sub_preds, gSlidePred = self.dtfd(tfeat_tensor)
-                slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0]), device=self.device) + tslideLabel
+                slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0],), device=self.device) + tslideLabel
                 loss0 = self.loss_function(slide_sub_preds, slide_sub_labels).mean()
                 self.optimizer0.zero_grad()
                 loss0.backward(retain_graph=True)

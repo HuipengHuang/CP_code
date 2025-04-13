@@ -44,8 +44,6 @@ class DTFDMIL(nn.Module):
 
             tattFeats = torch.einsum('ns,n->ns', tmidFeat, tAA)
             tattFeat_tensor = torch.sum(tattFeats, dim=0).unsqueeze(0)
-            print("haha")
-            print(tattFeat_tensor.shape)
             tPredict = self.classifier(tattFeat_tensor)
             slide_sub_preds.append(tPredict)
 
@@ -69,8 +67,7 @@ class DTFDMIL(nn.Module):
                 slide_pseudo_feat.append(af_inst_feat)
         slide_pseudo_feat = torch.cat(slide_pseudo_feat, dim=0)
         slide_sub_preds = torch.cat(slide_sub_preds, dim=0)  ### numGroup x fs
-        print(slide_sub_preds.shape)
-        print("--")
+
         gSlidePred = self.attCls(slide_pseudo_feat)
         """return instance logits and bag logits"""
         return slide_sub_preds, gSlidePred
