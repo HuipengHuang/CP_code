@@ -44,7 +44,7 @@ class DTFDPredictor:
         with torch.no_grad():
             cal_score = torch.tensor([], device=self.device)
             for data, target in cal_loader:
-                instance_logit, bag_logit = self.dtfdmil(data)
+                instance_logit, bag_logit = self.dtfdmil(data.squeeze(0))
                 prob = self.final_activation_function(bag_logit)
                 score = self.score(prob, target)
                 cal_score = torch.cat([cal_score, score], dim=0)
