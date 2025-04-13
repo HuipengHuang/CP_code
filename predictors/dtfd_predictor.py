@@ -41,6 +41,8 @@ class DTFDPredictor:
         """ Input calibration dataloader.
             Compute scores for all the calibration data and take the (1 - alpha) quantile."""
         self.dtfdmil.eval_mode()
+        if alpha is None:
+            alpha = self.alpha
         with torch.no_grad():
             cal_score = torch.tensor([], device=self.device)
             for data, target in cal_loader:
