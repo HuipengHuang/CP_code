@@ -37,7 +37,7 @@ class DFDT_Trainer:
         else:
             self.distill = "MaxMinS"
 
-        self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout).to(self.device)
+        self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout if args.dropout else 0).to(self.device)
         self.attention = DTFD.attention.Attention_Gated(512).to(self.device)
         self.dimReduction = DTFD.network.DimReduction(args.input_dimension, 512, dropout=args.dropout if args.dropout else 0).to(self.device)
         self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout if args.dropout else 0).to(
