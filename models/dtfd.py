@@ -69,7 +69,9 @@ class DTFDMIL(nn.Module):
 
         slide_pseudo_feat = torch.stack(slide_pseudo_feat, dim=0)
         slide_sub_preds = torch.stack(slide_sub_preds, dim=0)  ### numGroup x fs
-
+        print(slide_pseudo_feat.shape)
+        print(slide_sub_preds.shape)
+        print("--")
         gSlidePred = self.attCls(slide_pseudo_feat)
         """return instance logits and bag logits"""
         return slide_sub_preds, gSlidePred
