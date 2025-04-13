@@ -1,9 +1,15 @@
+import random
+
+import numpy as np
+from torch.utils.data import RandomSampler
+
 from scores.utils import get_score, get_train_score
 import torch
 import torch.nn as nn
 import math
 import torchsort
-from trainers.utils import five_scores
+from trainers.utils import five_scores, get_cam_1d
+
 
 class DTFDPredictor:
     def __init__(self, args, net_list, num_classes, final_activation_function, adapter=None):
@@ -27,31 +33,98 @@ class DTFDPredictor:
         else:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
         self.device = torch.device(f"cuda:{args.gpu}")
+        self.bag_size = args.bag_size
+        self.distill = args.distill
 
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
             Compute scores for all the calibration data and take the (1 - alpha) quantile."""
+        self.classifier.eval()
+        self.attention.eval()
+        self.dimReduction.eval()
+
         with torch.no_grad():
-            if alpha is None:
-                alpha = self.alpha
-            cal_score = torch.tensor([], device=self.device)
-            for data, target in cal_loader:
-                data = data.to(self.device)
-                target = target.to(self.device)
+            ds = cal_loader.dataset
+            num_bag = len(ds)
 
-                if self.args.model == "dsmil":
-                    logits = self.net(data)[1]
-                else:
-                    logits = self.net(data)
+            numIter = num_bag // self.bag_size
+            tIDX = list(RandomSampler(range(num_bag)))
 
-                if self.adapter is not None:
-                    logits = self.adapter(logits)
+            for idx in range(numIter):
+                tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
+                tlabel = []
+                batch_feat = []
+                for i in tidx_slide:
+                    data, target = ds[i]
+                    tlabel.append(target)
+                    batch_feat.append(data)
 
-                prob = self.final_activation_function(logits)
+                label_tensor = torch.LongTensor(tlabel).to(self.device)
 
-                batch_score = self.score.compute_target_score(prob, target)
+                for tidx, tfeat in enumerate(batch_feat):
+                    tslideLabel = label_tensor[tidx].unsqueeze(0)
+                    midFeat = self.dimReduction(tfeat)
 
-                cal_score = torch.cat((cal_score, batch_score), 0)
+                    AA = self.attention(midFeat, isNorm=False).squeeze(0)  ## N
+
+                    cal_score = torch.tensor([], device=self.device)
+
+                    for jj in range(2):
+
+                        feat_index = list(range(tfeat.shape[0]))
+                        random.shuffle(feat_index)
+                        index_chunk_list = np.array_split(np.array(feat_index), self.numgroup)
+                        index_chunk_list = [sst.tolist() for sst in index_chunk_list]
+
+                        slide_d_feat = []
+                        slide_sub_preds = []
+                        slide_sub_labels = []
+
+                        for tindex in index_chunk_list:
+                            slide_sub_labels.append(tslideLabel)
+                            idx_tensor = torch.LongTensor(tindex).to(self.device)
+                            tmidFeat = midFeat.index_select(dim=0, index=idx_tensor)
+
+                            tAA = AA.index_select(dim=0, index=idx_tensor)
+                            tAA = torch.softmax(tAA, dim=0)
+                            tattFeats = torch.einsum('ns,n->ns', tmidFeat, tAA)  ### n x fs
+                            tattFeat_tensor = torch.sum(tattFeats, dim=0).unsqueeze(0)  ## 1 x fs
+
+                            tPredict = self.classifier(tattFeat_tensor)  ### 1 x 2
+                            slide_sub_preds.append(tPredict)
+
+                            patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(
+                                0)  ###  cls x n
+                            patch_pred_logits = torch.transpose(patch_pred_logits, 0, 1)  ## n x cls
+                            patch_pred_softmax = torch.softmax(patch_pred_logits, dim=1)  ## n x cls
+
+                            _, sort_idx = torch.sort(patch_pred_softmax[:, -1], descending=True)
+                            instance_per_group = 1
+
+                            if self.distill == 'MaxMinS':
+                                topk_idx_max = sort_idx[:instance_per_group].long()
+                                topk_idx_min = sort_idx[-instance_per_group:].long()
+                                topk_idx = torch.cat([topk_idx_max, topk_idx_min], dim=0)
+                                d_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)
+                                slide_d_feat.append(d_inst_feat)
+                            elif self.distill == 'MaxS':
+                                topk_idx_max = sort_idx[:instance_per_group].long()
+                                topk_idx = topk_idx_max
+                                d_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)
+                                slide_d_feat.append(d_inst_feat)
+                            elif self.distill == 'AFS':
+                                slide_d_feat.append(tattFeat_tensor)
+
+                        slide_d_feat = torch.cat(slide_d_feat, dim=0)
+                        slide_sub_preds = torch.cat(slide_sub_preds, dim=0)
+                        slide_sub_labels = torch.cat(slide_sub_labels, dim=0)
+
+                        gPred_0 = torch.cat([gPred_0, slide_sub_preds], dim=0)
+
+                        gSlidePred = self.attCls(slide_d_feat)
+                        prob = torch.softmax(gSlidePred, dim=1)
+                        score = self.score(prob, tslideLabel)
+                        cal_score = torch.cat((cal_score, score), dim=0)
 
             N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)

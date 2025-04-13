@@ -34,21 +34,12 @@ class AggPredictor(Predictor):
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
 
-            if alpha is None:
-                alpha = self.alpha
             cal_score = torch.tensor([], device=self.device)
             for data, target in cal_loader:
                 data = data.to(self.device)
                 target = target.to(self.device)
-                if self.args.model == "dsmil":
-                    logits = self.net(data)[1]
-                else:
-                    logits = self.net(data)
 
-                if self.adapter is not None:
-                    logits = self.adapter(logits)
-
-                prob = self.final_activation_function(logits)
+                prob = self.get_prob(data)
 
                 batch_score = self.score.compute_target_score(prob, target)
 

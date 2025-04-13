@@ -161,6 +161,7 @@ class DFDT_Trainer:
         self.classifier.eval()
         self.attention.eval()
         self.dimReduction.eval()
+
         gPred_0 = torch.FloatTensor().to(self.device)
         gt_0 = torch.LongTensor().to(self.device)
         gPred_1 = torch.FloatTensor().to(self.device)

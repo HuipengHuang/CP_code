@@ -1,8 +1,11 @@
 from .predictor import Predictor
+from .dtfd_predictor import DTFDPredictor
 from .aggregation_predictor import MaxPredictor, KMeanPredictor
 import torch
 def get_predictor(args, net, num_classes, adapter=None, final_activation_function="softmax"):
-    if args.aggregation is not None:
+    if args.model == "dtfdmil":
+        predictor = DTFDPredictor(args, net, num_classes, final_activation_function, adapter)
+    elif args.aggregation is not None:
         if args.aggregation == "max":
             predictor = MaxPredictor(args, net, num_classes, final_activation_function, adapter)
         elif args.aggregation == "kmean":
