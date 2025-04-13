@@ -87,9 +87,7 @@ class DTFDPredictor:
                     data = data.to(self.device)
                     target = target.to(self.device)
 
-                    test_logits = self.dtfdmil(data)[1]
-                    print("shape")
-                    print(test_logits.shape)
+                    test_logits = self.dtfdmil(data.squeeze(0))[1]
 
                     prob = self.final_activation_function(test_logits, dim=-1)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
