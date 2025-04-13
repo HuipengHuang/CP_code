@@ -18,9 +18,9 @@ class DTFDMIL(nn.Module):
         self.shuffle = shuffle
         self.device = device
         if final_activation_function == "softmax":
-            self.final_activation_function = nn.Softmax(dim=-1)
+            self.activation_function = nn.Softmax(dim=-1)
         elif final_activation_function == "sigmoid":
-            self.final_activation_function = nn.Sigmoid()
+            self.activation_function = nn.Sigmoid()
         else:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
 
