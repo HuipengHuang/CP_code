@@ -57,7 +57,6 @@ class DTFDMIL(nn.Module):
             topk_idx = torch.cat([topk_idx_max, topk_idx_min], dim=0)
 
             if self.distill == 'MaxMinS':
-
                 MaxMin_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)  ##########################
                 slide_pseudo_feat.append(MaxMin_inst_feat)
             elif self.distill == 'MaxS':
@@ -66,11 +65,10 @@ class DTFDMIL(nn.Module):
             elif self.distill == 'AFS':
                 af_inst_feat = tattFeat_tensor
                 slide_pseudo_feat.append(af_inst_feat)
-
+        print(slide_pseudo_feat[0].shape)
         slide_pseudo_feat = torch.stack(slide_pseudo_feat, dim=0)
         slide_sub_preds = torch.stack(slide_sub_preds, dim=0)  ### numGroup x fs
-        print(slide_pseudo_feat.shape)
-        print(slide_sub_preds.shape)
+
         print("--")
         gSlidePred = self.attCls(slide_pseudo_feat)
         """return instance logits and bag logits"""
