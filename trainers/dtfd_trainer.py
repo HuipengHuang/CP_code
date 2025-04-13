@@ -60,8 +60,10 @@ class DFDT_Trainer:
         else:
             self.early_stopping = None
         self.args = args
-
-        self.bag_size = args.bag_size
+        if args.bag_size:
+            self.bag_size = args.bag_size
+        else:
+            self.bag_size = 4
         if args.shuffle == "True":
             self.shuffle = True
         else:
