@@ -110,6 +110,10 @@ class DFDT_Trainer:
 
                 slide_sub_preds, gSlidePred = self.dtfd(tfeat_tensor)
                 slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0],), device=self.device) + tslideLabel
+                print("---")
+                print(slide_sub_preds.dtype)
+                print(slide_sub_labels.dtype)
+                print(tslideLabel.dtype)
                 loss0 = self.loss_function(slide_sub_preds, slide_sub_labels).mean()
                 self.optimizer0.zero_grad()
                 loss0.backward(retain_graph=True)
