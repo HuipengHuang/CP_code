@@ -47,7 +47,7 @@ class DFDT_Trainer:
         self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout if args.dropout else 0).to(
             self.device)
         self.dtfd = dtfd.DTFDMIL(self.device,self.classifier, self.attention, self.dimReduction, self.attCls, self.numgroup,
-                                 self.distill, self.shuffle)
+                                 final_activation_function,self.distill, self.shuffle)
         trainable_parameter = []
         trainable_parameter += list(self.classifier.parameters())
         trainable_parameter += list(self.attention.parameters())

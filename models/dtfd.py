@@ -7,7 +7,7 @@ from trainers.utils import get_cam_1d
 
 
 class DTFDMIL(nn.Module):
-    def __init__(self, device, classifier, attention, dimReduction, attCls, numgroup=4, distill="MaxMinS", shuffle=True):
+    def __init__(self, device, classifier, attention, dimReduction, attCls, numgroup=4, final_activation_function="softmax" ,distill="MaxMinS", shuffle=True):
         super(DTFDMIL, self).__init__()
         self.classifier = classifier
         self.attention = attention
@@ -17,6 +17,12 @@ class DTFDMIL(nn.Module):
         self.numgroup = numgroup
         self.shuffle = shuffle
         self.device = device
+        if final_activation_function == "softmax":
+            self.final_activation_function = nn.Softmax(dim=-1)
+        elif final_activation_function == "sigmoid":
+            self.final_activation_function = nn.Sigmoid()
+        else:
+            raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
 
     def forward(self, tfeat_tensor):
         slide_pseudo_feat = []
