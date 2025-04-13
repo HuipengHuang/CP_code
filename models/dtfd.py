@@ -73,7 +73,7 @@ class DTFDMIL(nn.Module):
         """return instance logits and bag logits"""
         return slide_sub_preds, gSlidePred
 
-    def eval(self):
+    def eval_mode(self):
         self.classifier.eval()
         self.attCls.eval()
         self.dimReduction.eval()

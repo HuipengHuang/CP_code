@@ -40,7 +40,7 @@ class DTFDPredictor:
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
             Compute scores for all the calibration data and take the (1 - alpha) quantile."""
-        self.dtfdmil.eval()
+        self.dtfdmil.eval_mode()
         with torch.no_grad():
             cal_score = torch.tensor([], device=self.device)
             for data, target in cal_loader:
@@ -73,7 +73,7 @@ class DTFDPredictor:
 
     def evaluate(self, test_loader):
         self.set_mode("test")
-        self.net.eval()
+        self.dtfdmil.eval_mode()
         """Use conformal prediction when threshold is not None."""
         if self.threshold is not None:
             bag_prob, bag_labels = [], []
