@@ -109,7 +109,7 @@ class DFDT_Trainer:
                 tfeat_tensor, tslideLabel = tfeat_tensor.to(self.device), tslideLabel.to(self.device)
 
                 slide_sub_preds, gSlidePred = self.dtfd(tfeat_tensor)
-                slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0],), device=self.device) + tslideLabel
+                slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0],), device=self.device, dtype=torch.int64) + tslideLabel
                 print("---")
                 print(slide_sub_preds.dtype)
                 print(slide_sub_labels.dtype)
