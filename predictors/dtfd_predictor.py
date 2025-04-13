@@ -12,7 +12,7 @@ from trainers.utils import five_scores, get_cam_1d
 
 
 class DTFDPredictor:
-    def __init__(self, args, dtfd, num_classes, final_activation_function, adapter=None):
+    def __init__(self, args, dtfdmil, num_classes, final_activation_function, adapter=None):
         self.args = args
         self.test_score = get_score(args)
         if args.train_score is None:
@@ -25,7 +25,7 @@ class DTFDPredictor:
         self.threshold = None
         self.alpha = args.alpha
         #self.classifier, self.attention, self.dimReduction, self.attCls = net_list
-        self.dtfd = dtfd
+        self.dtfdmil = dtfdmil
         self.num_classes = num_classes
         if final_activation_function == "softmax":
             self.final_activation_function = nn.Softmax(dim=-1)
@@ -40,11 +40,11 @@ class DTFDPredictor:
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
             Compute scores for all the calibration data and take the (1 - alpha) quantile."""
-        self.dtfd.eval()
+        self.dtfdmil.eval()
         with torch.no_grad():
             cal_score = torch.tensor([], device=self.device)
             for data, target in cal_loader:
-                instance_logit, bag_logit = self.dtfd(data)
+                instance_logit, bag_logit = self.dtfdmil(data)
                 prob = self.final_activation_function(bag_logit)
                 score = self.score(prob, target)
                 cal_score = torch.cat([cal_score, score], dim=0)
@@ -85,7 +85,7 @@ class DTFDPredictor:
                     data = data.to(self.device)
                     target = target.to(self.device)
 
-                    test_logits = self.dtfd(data)[1]
+                    test_logits = self.dtfdmil(data)[1]
 
                     prob = self.final_activation_function(test_logits, dim=-1)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
@@ -110,7 +110,7 @@ class DTFDPredictor:
                     bag_labels.append(target.item())
                     data = data.to(self.device)
 
-                    test_logits = self.dtfd(data)
+                    test_logits = self.dtfdmil(data)
 
                     bag_prob.append(self.final_activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 

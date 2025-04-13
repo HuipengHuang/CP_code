@@ -46,8 +46,8 @@ class DFDT_Trainer:
         self.dimReduction = DTFD.network.DimReduction(args.input_dimension, 512, dropout=args.dropout if args.dropout else 0).to(self.device)
         self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout if args.dropout else 0).to(
             self.device)
-        self.dtfd = dtfd.DTFDMIL(self.device,self.classifier, self.attention, self.dimReduction, self.attCls, self.numgroup,
-                                 final_activation_function,self.distill, self.shuffle)
+        self.dtfdmil = dtfd.DTFDMIL(self.device, self.classifier, self.attention, self.dimReduction, self.attCls, self.numgroup,
+                                    final_activation_function, self.distill, self.shuffle)
         trainable_parameter = []
         trainable_parameter += list(self.classifier.parameters())
         trainable_parameter += list(self.attention.parameters())
@@ -108,7 +108,7 @@ class DFDT_Trainer:
                 tfeat_tensor, tslideLabel = ds[bag_idx]
                 tfeat_tensor, tslideLabel = tfeat_tensor.to(self.device), tslideLabel.to(self.device)
 
-                slide_sub_preds, gSlidePred = self.dtfd(tfeat_tensor)
+                slide_sub_preds, gSlidePred = self.dtfdmil(tfeat_tensor)
                 slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0],), device=self.device, dtype=torch.int64) + tslideLabel
 
                 loss0 = self.loss_function(slide_sub_preds, slide_sub_labels).mean()
