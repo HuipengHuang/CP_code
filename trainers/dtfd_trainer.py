@@ -1,5 +1,4 @@
 import random
-
 import numpy as np
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -11,6 +10,7 @@ import torch.nn.functional as F
 from .early_stopping import EarlyStopping
 from loss.utils import get_loss_function
 from predictors.utils import get_predictor
+from models import dtfd
 import torch.nn as nn
 
 
@@ -27,7 +27,23 @@ class DFDT_Trainer:
             self.activation_function = nn.Sigmoid()
         else:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
-        self.predictor = get_predictor(args, None, num_classes=num_classes,
+
+        self.numgroup = args.numgroup
+        self.distill = args.distill
+
+        self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout).to(self.device)
+        self.attention = DTFD.attention.Attention_Gated(512).to(self.device)
+        self.dimReduction = DTFD.network.DimReduction(args.input_dimension, 512, dropout=args.dropout).to(self.device)
+        self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout).to(
+            self.device)
+        self.dtfd = dtfd.DTFDMIL(self.classifier, self.attention, self.dimReduction, self.attCls, args.numgroup,
+                                 args.distill)
+        trainable_parameter = []
+        trainable_parameter += list(self.classifier.parameters())
+        trainable_parameter += list(self.attention.parameters())
+        trainable_parameter += list(self.dimReduction.parameters())
+
+        self.predictor = get_predictor(args, dtfd, num_classes=num_classes,
                                        adapter=None,
                                        final_activation_function=final_activation_function)
         self.predictor.set_mode("train")
@@ -39,24 +55,12 @@ class DFDT_Trainer:
             self.early_stopping = None
         self.args = args
 
-        self.numgroup = args.numgroup
-        self.distill = args.distill
         self.bag_size = args.bag_size
         if args.shuffle == "True":
             self.shuffle = True
         else:
             self.shuffle = False
-        assert self.numgroup is not None, print("numgroup could not be None.")
-        assert self.distill is not None, print("distill could not be None.")
 
-        self.classifier = DTFD.network.Classifier_1fc(512, num_classes, args.dropout).to(self.device)
-        self.attention = DTFD.attention.Attention_Gated(512).to(self.device)
-        self.dimReduction = DTFD.network.DimReduction(args.input_dimension, 512, dropout=args.dropout).to(self.device)
-        self.attCls = DTFD.attention.Attention_with_Classifier(L=512, num_cls=num_classes, droprate=args.dropout).to(self.device)
-        trainable_parameter = []
-        trainable_parameter += list(self.classifier.parameters())
-        trainable_parameter += list(self.attention.parameters())
-        trainable_parameter += list(self.dimReduction.parameters())
 
         self.optimizer = None
         if args.optimizer == 'sgd':
@@ -92,63 +96,15 @@ class DFDT_Trainer:
             tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
 
             for tidx, bag_idx in enumerate(tidx_slide):
-                slide_pseudo_feat = []
-                slide_sub_preds = []
-                slide_sub_labels = []
-
                 tfeat_tensor, tslideLabel = ds[bag_idx]
-
                 tfeat_tensor, tslideLabel = tfeat_tensor.to(self.device), tslideLabel.to(self.device)
 
-                feat_index = list(range(tfeat_tensor.shape[0]))
-                if self.shuffle:
-                    random.shuffle(feat_index)
-                index_chunk_list = np.array_split(feat_index, num_bag)
-
-                index_chunk_list = [sst.tolist() for sst in index_chunk_list]
-
-                for tindex in index_chunk_list:
-                    slide_sub_labels.append(tslideLabel)
-                    subFeat_tensor = torch.index_select(tfeat_tensor, dim=0,
-                                                        index=torch.LongTensor(tindex).to(self.device))
-                    tmidFeat = self.dimReduction(subFeat_tensor)
-                    tAA = self.attention(tmidFeat).squeeze(0)
-
-                    tattFeats = torch.einsum('ns,n->ns', tmidFeat, tAA)
-                    tattFeat_tensor = torch.sum(tattFeats, dim=0)
-                    tPredict = self.classifier(tattFeat_tensor)
-                    slide_sub_preds.append(tPredict)
-
-                    patch_pred_logits = get_cam_1d(self.classifier, tattFeats.unsqueeze(0)).squeeze(0)  ###  cls x n
-                    patch_pred_logits = torch.transpose(patch_pred_logits, 0, 1)  ## n x cls
-                    patch_pred_prob = self.activation_function(patch_pred_logits)  ## n x cls
-
-                    _, sort_idx = torch.sort(patch_pred_prob[:, -1], descending=True)
-                    topk_idx_max = sort_idx[:1].long()
-                    topk_idx_min = sort_idx[-1:].long()
-                    topk_idx = torch.cat([topk_idx_max, topk_idx_min], dim=0)
-
-                    if self.distill == 'MaxMinS':
-
-                        MaxMin_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx)  ##########################
-                        slide_pseudo_feat.append(MaxMin_inst_feat)
-                    elif self.distill == 'MaxS':
-                        max_inst_feat = tmidFeat.index_select(dim=0, index=topk_idx_max)
-                        slide_pseudo_feat.append(max_inst_feat)
-                    elif self.distill == 'AFS':
-                        af_inst_feat = tattFeat_tensor
-                        slide_pseudo_feat.append(af_inst_feat)
-
-                slide_pseudo_feat = torch.stack(slide_pseudo_feat, dim=0)
-                slide_sub_preds = torch.stack(slide_sub_preds, dim=0)  ### numGroup x fs
-                slide_sub_labels = torch.tensor(slide_sub_labels, device=slide_sub_preds.device)  ### numGroup
-
+                slide_sub_preds, gSlidePred = self.dtfd(tfeat_tensor)
+                slide_sub_labels = torch.zeros(size=(slide_sub_preds.shape[0]), device=self.device) + tslideLabel
                 loss0 = self.loss_function(slide_sub_preds, slide_sub_labels).mean()
                 self.optimizer0.zero_grad()
                 loss0.backward(retain_graph=True)
 
-                ## optimization for the second tier
-                gSlidePred = self.attCls(slide_pseudo_feat)
                 loss1 = self.loss_function(gSlidePred, tslideLabel.view(-1)).mean()
                 self.optimizer1.zero_grad()
                 loss1.backward()
