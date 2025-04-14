@@ -55,10 +55,6 @@ class Predictor:
             N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
-            print("--")
-            print(threshold)
-            print("--")
-            print(torch.kthvalue(cal_score, math.ceil((1 - alpha) * (N + 1)), dim=0))
             return threshold
 
 
@@ -103,8 +99,8 @@ class Predictor:
                     coverage += (
                                 score_tensor[torch.arange(score_tensor.shape[0]), target] < self.threshold).sum().item()
 
-                coverage = coverage / len(test_loader)
-                average_set_size = average_set_size / len(test_loader)
+                coverage = coverage / len(test_loader.dataset)
+                average_set_size = average_set_size / len(test_loader.dataset)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
