@@ -93,7 +93,7 @@ class Predictor:
                     else:
                         test_logits = self.net(data)
 
-                    prob = self.final_activation_function(test_logits, dim=-1)
+                    prob = self.final_activation_function(test_logits)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     score_tensor = self.score(prob)
                     average_set_size += (score_tensor < self.threshold).sum().item()
