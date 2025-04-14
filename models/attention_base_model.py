@@ -18,8 +18,6 @@ class AttentionModel(nn.Module):
         self.L = 128
         self.ATTENTION_BRANCHES = 1
 
-
-
         self.feature_extractor_part2 = nn.Sequential(
             nn.Linear(input_dim, self.M),
             nn.ReLU(),
@@ -34,6 +32,7 @@ class AttentionModel(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
         )
+
         self.apply(initialize_weights)
 
     def forward(self, data):
