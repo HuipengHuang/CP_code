@@ -72,12 +72,12 @@ class AggPredictor(Predictor):
 
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     score_tensor = self.score(prob)
-                    average_set_size += (score_tensor < self.agg_threshold).sum().item()
+                    average_set_size += (score_tensor <= self.agg_threshold).sum().item()
                     coverage += (
-                            score_tensor[torch.arange(score_tensor.shape[0]), target] < self.agg_threshold).sum().item()
+                            score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.agg_threshold).sum().item()
 
-                coverage = coverage / len(test_loader)
-                average_set_size = average_set_size / len(test_loader)
+                coverage = coverage / len(test_loader.dataset)
+                average_set_size = average_set_size / len(test_loader.dataset)
 
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"Aggregation Method: {self.args.aggregation}")
@@ -125,9 +125,9 @@ class AggPredictor(Predictor):
                     prob = torch.softmax(test_logits, dim=-1)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     score_tensor = self.score(prob)
-                    average_set_size += (score_tensor < self.threshold).sum().item()
+                    average_set_size += (score_tensor <= self.threshold).sum().item()
                     coverage += (
-                            score_tensor[torch.arange(score_tensor.shape[0]), target] < self.threshold).sum().item()
+                            score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.threshold).sum().item()
 
                 coverage = coverage / len(test_loader)
                 average_set_size = average_set_size / len(test_loader)
