@@ -48,14 +48,13 @@ class Predictor:
                     logits = self.adapter(logits)
 
                 prob = self.final_activation_function(logits)
-
+                print("prob")
+                print(prob)
                 batch_score = self.score.compute_target_score(prob, target)
 
                 cal_score = torch.cat((cal_score, batch_score), 0)
 
             N = cal_score.shape[0]
-            print("cal_score")
-            print(cal_score)
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
             return threshold
