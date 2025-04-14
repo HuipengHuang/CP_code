@@ -54,6 +54,8 @@ class Predictor:
                 cal_score = torch.cat((cal_score, batch_score), 0)
 
             N = cal_score.shape[0]
+            print("cal_score")
+            print(cal_score)
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
             return threshold
@@ -80,8 +82,6 @@ class Predictor:
         self.net.eval()
         """Use conformal prediction when threshold is not None."""
         if self.threshold is not None:
-            print("threshold")
-            print(self.threshold)
             bag_prob, bag_labels = [], []
             average_set_size = 0
             coverage = 0
