@@ -21,18 +21,6 @@ def cp(args):
         if args.save == "True":
             save_exp_result(args, trainer, result_dict)
 
-    else:
-
-        train_loader, _, test_loader, num_classes = build_dataloader(args)
-        trainer = get_trainer(args, num_classes)
-
-        trainer.train(train_loader, args.epochs)
-        result_dict = trainer.predictor.evaluate(test_loader)
-        print(f"AUC: {trainer.predictor.compute_auc(test_loader)}")
-        for key, value in result_dict.items():
-            print(f'{key}: {value}')
-        if args.save == "True":
-            save_exp_result(args, trainer, result_dict)
 
 def standard(args):
     train_loader, _, test_loader, num_classes = build_dataloader(args)

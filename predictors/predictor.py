@@ -76,6 +76,7 @@ class Predictor:
         return threshold
 
     def evaluate(self, test_loader):
+        print("i am here")
         self.set_mode("test")
         self.net.eval()
         """Use conformal prediction when threshold is not None."""
