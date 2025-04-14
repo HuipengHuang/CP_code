@@ -48,8 +48,6 @@ class Predictor:
                     logits = self.adapter(logits)
 
                 prob = self.final_activation_function(logits)
-                print("prob")
-                print(prob)
                 batch_score = self.score.compute_target_score(prob, target)
 
                 cal_score = torch.cat((cal_score, batch_score), 0)
