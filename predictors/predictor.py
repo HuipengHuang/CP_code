@@ -76,11 +76,12 @@ class Predictor:
         return threshold
 
     def evaluate(self, test_loader):
-        print("i am here")
         self.set_mode("test")
         self.net.eval()
         """Use conformal prediction when threshold is not None."""
         if self.threshold is not None:
+            print("threshold")
+            print(self.threshold)
             bag_prob, bag_labels = [], []
             average_set_size = 0
             coverage = 0
