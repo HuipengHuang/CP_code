@@ -42,7 +42,7 @@ class Instance_Predictor:
                 target = target.to(self.device)
                 if target == 0:
                     j += 1
-                    if j == 2:
+                    if j == 5:
                         break
                     for instance in data.squeeze(0):
                         if self.args.model == "dsmil":
