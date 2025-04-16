@@ -54,6 +54,8 @@ class Instance_Predictor:
             N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
+            print("threshold")
+            print(threshold)
             return threshold
 
 
