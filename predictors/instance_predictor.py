@@ -36,7 +36,7 @@ class Instance_Predictor:
             if alpha is None:
                 alpha = self.alpha
             cal_list = []
-            for i, data, target in enumerate(cal_loader):
+            for i, (data, target) in enumerate(cal_loader):
                 if i == 2:
                     break
                 data = data.to(self.device)
