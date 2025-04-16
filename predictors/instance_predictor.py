@@ -103,7 +103,7 @@ class Instance_Predictor:
                         continue
                     else:
                         j +=1
-                        if j==2:
+                        if j==5:
                             break
                         for instance in data.squeeze(0):
                             num_instance += 1
@@ -119,7 +119,6 @@ class Instance_Predictor:
 
                 coverage = coverage / num_instance
                 average_set_size = average_set_size / num_instance
-                print(num_instance)
                 print(coverage)
                 print(average_set_size)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
