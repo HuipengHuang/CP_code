@@ -46,9 +46,9 @@ class Instance_Predictor:
                         break
                     for instance in data.squeeze(0):
                         if self.args.model == "dsmil":
-                            instance_logits = self.net(instance)[1].view(1, -1)
+                            instance_logits = self.net(instance.view(1, -1))[1]
                         else:
-                            instance_logits = self.net(instance).view(1, -1)
+                            instance_logits = self.net(instance.view(1, -1))
                         instance_prob = self.final_activation_function(instance_logits)
                         instance_batch_score = self.score.compute_target_score(instance_prob, torch.zeros(size=(instance_prob.shape[0],), dtype=torch.int32, device=self.device))
                         cal_list.append(instance_batch_score)
@@ -108,9 +108,9 @@ class Instance_Predictor:
                         for instance in data.squeeze(0):
                             num_instance += 1
                             if self.args.model == "dsmil":
-                                instance_logits = self.net(instance)[1].view(1, -1)
+                                instance_logits = self.net(instance.view(1, -1))[1]
                             else:
-                                instance_logits = self.net(instance).view(1, -1)
+                                instance_logits = self.net(instance.view(1, -1))
                             instance_prob = self.final_activation_function(instance_logits)
                             instance_batch_score = self.score(instance_prob)
                             average_set_size += (instance_batch_score <= self.threshold).sum().item()
