@@ -43,9 +43,10 @@ class Instance_Predictor:
                 target = target.to(self.device)
                 if target == 0:
                     j += 1
-                    if j==3:
+                    if j == 3:
                         break
                     for instance in data:
+                        print(instance.shape)
                         if self.args.model == "dsmil":
                             instance_logits = self.net(instance)[1]
                         else:
