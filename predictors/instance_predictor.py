@@ -107,8 +107,8 @@ class Instance_Predictor:
                                 instance_logits = self.net(instance)
                             instance_prob = self.final_activation_function(instance_logits)
                             instance_batch_score = self.score(instance_prob)
-                            average_set_size += (instance_batch_score < self.threshold).sum().item()
-                            if instance_batch_score[0, 0] < self.threshold:
+                            average_set_size += (instance_batch_score <= self.threshold).sum().item()
+                            if instance_batch_score[0, 0] <= self.threshold:
                                 coverage += 1
 
                 coverage = coverage / num_instance
