@@ -36,12 +36,15 @@ class Instance_Predictor:
             if alpha is None:
                 alpha = self.alpha
             cal_list = []
+            j = 0
             for i, (data, target) in enumerate(cal_loader):
-                if i == 2:
-                    break
+
                 data = data.to(self.device)
                 target = target.to(self.device)
                 if target == 0:
+                    j += 1
+                    if j==3:
+                        break
                     for instance in data:
                         if self.args.model == "dsmil":
                             instance_logits = self.net(instance)[1]
@@ -83,10 +86,10 @@ class Instance_Predictor:
             average_set_size = 0
             coverage = 0
             num_instance = 0
+            j = 0
             with torch.no_grad():
                 for i, (data, target) in enumerate(test_loader):
-                    if i == 2:
-                        break
+
                     bag_labels.append(target.item())
                     data = data.to(self.device)
                     target = target.to(self.device)
@@ -100,6 +103,9 @@ class Instance_Predictor:
                     if target == 1:
                         continue
                     else:
+                        j +=1
+                        if j==3:
+                            break
                         for instance in data:
                             num_instance += 1
                             if self.args.model == "dsmil":
