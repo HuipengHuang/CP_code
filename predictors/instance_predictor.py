@@ -38,18 +38,17 @@ class Instance_Predictor:
             cal_list = []
             j = 0
             for i, (data, target) in enumerate(cal_loader):
-
                 data = data.to(self.device)
                 target = target.to(self.device)
                 if target == 0:
                     j += 1
-                    if j == 3:
+                    if j == 2:
                         break
                     for instance in data.squeeze(0):
                         if self.args.model == "dsmil":
                             instance_logits = self.net(instance)[1].view(1, -1)
                         else:
-                            instance_logits = self.net(instance.view(1, -1))
+                            instance_logits = self.net(instance).view(1, -1)
                         instance_prob = self.final_activation_function(instance_logits)
                         instance_batch_score = self.score.compute_target_score(instance_prob, torch.zeros(size=(instance_prob.shape[0],), dtype=torch.int32, device=self.device))
                         cal_list.append(instance_batch_score)
@@ -104,9 +103,9 @@ class Instance_Predictor:
                         continue
                     else:
                         j +=1
-                        if j==3:
+                        if j==2:
                             break
-                        for instance in data:
+                        for instance in data.squeeze(0):
                             num_instance += 1
                             if self.args.model == "dsmil":
                                 instance_logits = self.net(instance)[1].view(1, -1)
