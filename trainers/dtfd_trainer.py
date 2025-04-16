@@ -69,19 +69,17 @@ class DFDT_Trainer:
         else:
             self.bag_size = 4
 
-
-
         self.optimizer = None
         if args.optimizer == 'sgd':
             self.optimizer0 = torch.optim.SGD(trainable_parameter, lr=args.learning_rate, momentum=args.momentum,
-                                             weight_decay=args.weight_decay, nesterov=(args.nesterov == "True"))
+                                              weight_decay=args.weight_decay, nesterov=(args.nesterov == "True"))
             self.optimizer1 = torch.optim.SGD(self.attCls.parameters(), lr=args.learning_rate, momentum=args.momentum,
-                                             weight_decay=args.weight_decay, nesterov=(args.nesterov == "True"))
+                                              weight_decay=args.weight_decay, nesterov=(args.nesterov == "True"))
         elif args.optimizer == 'adam':
             self.optimizer0 = torch.optim.Adam(trainable_parameter, lr=args.learning_rate,
-                                              weight_decay=args.weight_decay)
+                                               weight_decay=args.weight_decay)
             self.optimizer1 = torch.optim.Adam(self.attCls.parameters(), lr=args.learning_rate,
-                                              weight_decay=args.weight_decay)
+                                               weight_decay=args.weight_decay)
 
         if args.learning_rate_scheduler == 'cosine':
             self.scheduler0 = CosineAnnealingLR(self.optimizer0, T_max=args.epochs, eta_min=0)

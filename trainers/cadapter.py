@@ -8,14 +8,13 @@ class Adapter(nn.Module):
         super().__init__()
         self.num_classes = num_classes
         self.adapter_net = nn.Sequential(nn.Linear(in_features=input_dim, out_features=128, bias=True, device=device),
-                                        nn.ReLU(),
+                                         nn.ReLU(),
                                          nn.Linear(in_features=128, out_features=128, bias=True, device=device),
                                          nn.ReLU(),
-                                        nn.Linear(in_features=128, out_features=num_classes, bias=True, device=device))
+                                         nn.Linear(in_features=128, out_features=num_classes, bias=True, device=device))
 
     def forward(self, logits):
         return self.adapter_net(logits)
-
 
 
 class CAdapter(Adapter):

@@ -1,4 +1,5 @@
 from .predictor import Predictor
+from .instance_predictor import Instance_Predictor
 from .dtfd_predictor import DTFDPredictor
 from .aggregation_predictor import MaxPredictor, KMeanPredictor
 import torch
@@ -12,6 +13,8 @@ def get_predictor(args, net, num_classes, adapter=None, final_activation_functio
             predictor = KMeanPredictor(args, net, num_classes, final_activation_function, adapter)
         else:
             raise NotImplementedError
+    elif args.instance_level == "True":
+        predictor = Instance_Predictor(args, net, num_classes, final_activation_function)
     else:
         predictor = Predictor(args, net, num_classes, final_activation_function, adapter)
     return predictor

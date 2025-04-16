@@ -5,7 +5,8 @@ import math
 import torchsort
 from trainers.utils import five_scores
 
-class Predictor:
+
+class Instance_Predictor:
     def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
         self.args = args
         self.test_score = get_score(args)
@@ -34,24 +35,22 @@ class Predictor:
         with torch.no_grad():
             if alpha is None:
                 alpha = self.alpha
-            cal_score = torch.tensor([], device=self.device)
-            for data, target in cal_loader:
+            cal_list = []
+            for i, data, target in enumerate(cal_loader):
+                if i == 2:
+                    break
                 data = data.to(self.device)
                 target = target.to(self.device)
-
-                if self.args.model == "dsmil":
-                    logits = self.net(data)[1]
-                else:
-                    logits = self.net(data)
-
-                if self.adapter is not None:
-                    logits = self.adapter(logits)
-
-                prob = self.final_activation_function(logits)
-                batch_score = self.score.compute_target_score(prob, target)
-
-                cal_score = torch.cat((cal_score, batch_score), 0)
-
+                if target == 0:
+                    for instance in data:
+                        if self.args.model == "dsmil":
+                            instance_logits = self.net(instance)[1]
+                        else:
+                            instance_logits = self.net(instance)
+                        instance_prob = self.final_activation_function(instance_logits)
+                        instance_batch_score = self.score.compute_target_score(instance_prob, torch.zeros(size=(instance_prob.shape[0],), device=self.device))
+                        cal_list.append(instance_batch_score)
+            cal_score = torch.stack(cal_list, dim=0)
             N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
@@ -82,8 +81,11 @@ class Predictor:
             bag_prob, bag_labels = [], []
             average_set_size = 0
             coverage = 0
+            num_instance = 0
             with torch.no_grad():
                 for i, (data, target) in enumerate(test_loader):
+                    if i == 2:
+                        break
                     bag_labels.append(target.item())
                     data = data.to(self.device)
                     target = target.to(self.device)
@@ -94,13 +96,23 @@ class Predictor:
 
                     prob = self.final_activation_function(test_logits)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
-                    score_tensor = self.score(prob)
-                    average_set_size += (score_tensor <= self.threshold).sum().item()
-                    coverage += (
-                                score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.threshold).sum().item()
+                    if target == 1:
+                        continue
+                    else:
+                        for instance in data:
+                            num_instance += 1
+                            if self.args.model == "dsmil":
+                                instance_logits = self.net(instance)[1]
+                            else:
+                                instance_logits = self.net(instance)
+                            instance_prob = self.final_activation_function(instance_logits)
+                            instance_batch_score = self.score(instance_prob)
+                            average_set_size += (instance_batch_score < self.threshold).sum().item()
+                            if instance_batch_score[0, 0] < self.threshold:
+                                coverage += 1
 
-                coverage = coverage / len(test_loader.dataset)
-                average_set_size = average_set_size / len(test_loader.dataset)
+                coverage = coverage / num_instance
+                average_set_size = average_set_size / num_instance
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
