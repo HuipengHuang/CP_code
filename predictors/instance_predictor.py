@@ -42,8 +42,6 @@ class Instance_Predictor:
                 target = target.to(self.device)
                 if target == 0:
                     j += 1
-                    if j == 5:
-                        break
                     for instance in data.squeeze(0):
                         if self.args.model == "dsmil":
                             instance_logits = self.net(instance.view(1, -1))[1]
@@ -103,8 +101,6 @@ class Instance_Predictor:
                         continue
                     else:
                         j +=1
-                        if j==5:
-                            break
                         for instance in data.squeeze(0):
                             num_instance += 1
                             if self.args.model == "dsmil":
