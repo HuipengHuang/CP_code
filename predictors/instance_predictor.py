@@ -99,6 +99,7 @@ class Instance_Predictor:
 
                     prob = self.final_activation_function(test_logits)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+
                     if target == 1:
                         continue
                     else:
@@ -108,9 +109,9 @@ class Instance_Predictor:
                         for instance in data:
                             num_instance += 1
                             if self.args.model == "dsmil":
-                                instance_logits = self.net(instance)[1]
+                                instance_logits = self.net(instance)[1].view(1, -1)
                             else:
-                                instance_logits = self.net(instance)
+                                instance_logits = self.net(instance).view(1, -1)
                             instance_prob = self.final_activation_function(instance_logits)
                             instance_batch_score = self.score(instance_prob)
                             average_set_size += (instance_batch_score <= self.threshold).sum().item()
@@ -119,6 +120,9 @@ class Instance_Predictor:
 
                 coverage = coverage / num_instance
                 average_set_size = average_set_size / num_instance
+                print(num_instance)
+                print(coverage)
+                print(average_set_size)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
