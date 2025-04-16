@@ -53,8 +53,8 @@ class Instance_Predictor:
                         instance_prob = self.final_activation_function(instance_logits)
                         instance_batch_score = self.score.compute_target_score(instance_prob, torch.zeros(size=(instance_prob.shape[0],), dtype=torch.int32, device=self.device))
                         cal_list.append(instance_batch_score)
+            print(cal_list)
             cal_score = torch.cat(cal_list, dim=0)
-            print(cal_score.shape)
             N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
