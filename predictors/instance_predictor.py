@@ -99,7 +99,7 @@ class Instance_Predictor:
                     prob = self.final_activation_function(test_logits)
                     bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
 
-                    if target == 1:
+                    if target == 2:
                         continue
                     else:
                         j +=1
