@@ -99,7 +99,7 @@ class DFDT_Trainer:
         numIter = num_bag // self.bag_size
         tIDX = list(RandomSampler(range(num_bag)))
 
-        for idx in tqdm(range(numIter), desc=f"{epoch}/{self.args.epochs}"):
+        for idx in tqdm(range(numIter), desc=f"Epoch: {epoch}/{self.args.epochs}"):
             tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
 
             for tidx, bag_idx in enumerate(tidx_slide):
@@ -245,7 +245,6 @@ class DFDT_Trainer:
     def train(self, train_loader, epochs, val_loader=None):
         if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
-                print(len(train_loader.dataset))
                 self.train_loop(train_loader, epoch)
         else:
             for epoch in range(epochs):
