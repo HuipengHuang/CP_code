@@ -112,7 +112,7 @@ class DTFDPredictor:
                     bag_labels.append(target.item())
                     data = data.to(self.device)
 
-                    test_logits = self.dtfdmil(data)
+                    test_logits = self.dtfdmil(data.squeeze(0))
 
                     bag_prob.append(self.final_activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
 

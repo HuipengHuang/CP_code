@@ -99,7 +99,7 @@ class DFDT_Trainer:
         numIter = num_bag // self.bag_size
         tIDX = list(RandomSampler(range(num_bag)))
 
-        for idx in tqdm(range(numIter), desc=f"Epoch: {epoch}/{self.args.epochs}"):
+        for idx in tqdm(range(numIter), desc=f"Epoch: {epoch+1}/{self.args.epochs}"):
             tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
 
             for tidx, bag_idx in enumerate(tidx_slide):
