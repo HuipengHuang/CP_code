@@ -114,7 +114,7 @@ class DTFDPredictor:
 
                     test_logits = self.dtfdmil(data.squeeze(0))
 
-                    bag_prob.append(self.final_activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+                    bag_prob.append(self.final_activation_function(test_logits)[:, 1].cpu().squeeze().numpy())
 
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
