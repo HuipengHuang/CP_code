@@ -99,7 +99,7 @@ class DFDT_Trainer:
         numIter = num_bag // self.bag_size
         tIDX = list(RandomSampler(range(num_bag)))
 
-        for idx in tqdm(range(numIter)):
+        for idx in tqdm(range(numIter), desc=f"{epoch}/{self.args.epochs}"):
             tidx_slide = tIDX[idx * self.bag_size: (idx + 1) * self.bag_size]
 
             for tidx, bag_idx in enumerate(tidx_slide):
@@ -118,8 +118,9 @@ class DFDT_Trainer:
                 loss1.backward()
                 self.optimizer0.step()
                 self.optimizer1.step()
-        self.scheduler0.step()
-        self.scheduler1.step()
+        if self.scheduler0 is not None and self.scheduler1 is not None:
+            self.scheduler0.step()
+            self.scheduler1.step()
 
     def val_loop(self, val_loader):
         self.classifier.eval()
