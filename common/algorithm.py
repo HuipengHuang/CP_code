@@ -28,7 +28,6 @@ def standard(args):
 
     trainer.train(train_loader, args.epochs, val_loader=test_loader)
     result_dict = trainer.predictor.evaluate(test_loader)
-    print(f"AUC: {trainer.predictor.compute_auc(test_loader)}")
     for key, value in result_dict.items():
         print(f'{key}: {value}')
     if args.save == "True":
