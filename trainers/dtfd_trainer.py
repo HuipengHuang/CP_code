@@ -245,6 +245,7 @@ class DFDT_Trainer:
     def train(self, train_loader, epochs, val_loader=None):
         if val_loader is None or self.early_stopping is None:
             for epoch in range(epochs):
+                print(len(train_loader.dataset))
                 self.train_loop(train_loader, epoch)
         else:
             for epoch in range(epochs):

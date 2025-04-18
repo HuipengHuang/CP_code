@@ -79,7 +79,6 @@ def cross_validation(args):
             test_loader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
 
             if args.algorithm == "standard":
-                print(len(train_loader.dataset))
                 trainer.train(train_loader, args.epochs, test_loader)
             else:
                 trainer.train(train_loader, args.epochs, cal_loader)
