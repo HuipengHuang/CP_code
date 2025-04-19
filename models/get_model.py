@@ -32,7 +32,6 @@ def build_mil_model(args, num_classes):
         b_classifier = dsmil.BClassifier(input_size=args.input_dimension, mDim=args.input_dimension, output_class=num_classes,
                                        passing_v=False).to(device)
         net = dsmil.MILNet(i_classifier, b_classifier).to(device)
-
     elif net is None:
         raise ValueError(f"Unsupported model type: {model_type}")
     return net

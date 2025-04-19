@@ -1,11 +1,13 @@
 import csv
 import os
+import h5py
+import pandas as pd
 from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset
 
 
-class MILCamelyon17(Dataset):
+class OldMILCamelyon17(Dataset):
     def __init__(self, device, path):
         self.device = device
         self.data_list = []
@@ -35,6 +37,42 @@ class MILCamelyon17(Dataset):
                 label = torch.tensor(label)
 
                 self.data_list.append(data)
+                self.label_list.append(label)
+
+    def __len__(self):
+        return len(self.label_list)  # Use label_list, not label
+
+    def __getitem__(self, idx):
+        data = self.data_list[idx]
+        label = self.label_list[idx]
+        return data, label
+
+
+class MILCamelyon17(Dataset):
+    def __init__(self, device, path, model_name="resnet18"):
+        self.device = device
+        self.data_list = []
+        self.label_list = []
+        self.path = path
+
+        if model_name == "resnet18":
+            file_path = os.path.join(path, "2876b90fa43966b8c3e5f7ea959127f2ad5985cd9aab5e6f440ba2bf8bdf97db")
+        elif model_name == "vit-s/16":
+            file_path = os.path.join(path, "87438d72349c5ed8f67ac5cc3f97e96de37c1bdab50264060c0e768df00f9324")
+        elif model_name == "vit-l":
+            file_path = os.path.join(path, "a0102026a7754759d48c84316ac8ba6f6ab774c00476d528db55ec74f1fc3921")
+        else:
+            raise NotImplementedError
+
+        df = pd.read_csv(f"{path}/label.csv", header=None, index_col=0)
+
+        mapping_dict = {"negative": 0, "itc": 1, "micro": 2, "macro": 3}
+        with h5py.File(file_path, 'r') as f:
+            for key in f.keys():
+                feat_data = f[key]["feat"]
+                label = df.loc[key, 1]
+                label = mapping_dict[label]
+                self.data_list.append(feat_data)
                 self.label_list.append(label)
 
     def __len__(self):

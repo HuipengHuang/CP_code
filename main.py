@@ -22,7 +22,7 @@ parser.add_argument("--algorithm", '-alg', default="cp", choices=["standard", "c
 parser.add_argument("--final_activation_function",default="softmax", choices=["softmax", "sigmoid"])
 parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 parser.add_argument("--save_result", default=None, choices=["True", "False"])
-parser.add_argument("--extract_feature_model", default=None, choices=["resnet18", "resnet50"])
+parser.add_argument("--extract_feature_model", default=None)
 parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
 parser.add_argument("--patience", default=None, type=int)
 parser.add_argument("--aggregation","-agg", default=None, type=str, choices=["max", "kmean"])

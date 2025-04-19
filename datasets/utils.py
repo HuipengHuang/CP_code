@@ -4,8 +4,7 @@ import torchvision
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader, Subset, random_split
 from torch.utils.data import ConcatDataset
-import wilds
-from .camelyon17 import MILCamelyon17
+from .camelyon17 import OldMILCamelyon17, MILCamelyon17
 from .camelyon16 import MILCamelyon16, MILCamelyon16_rn18, MILCamelyon16_rn50
 from .tcga import TCGA_rn18, TCGA_rn50
 import os
@@ -61,64 +60,31 @@ def build_dataset(args):
             save_path = "./data/camelyon16_rn18_feature"
             mil_dataset = MILCamelyon16_rn18(device=device, path=save_path)
 
-            cal_size = int(args.cal_ratio * len(mil_dataset) * 0.4)
-            test_size = int(len(mil_dataset) * 0.4) - cal_size
-            train_size = len(mil_dataset) - test_size - cal_size
-            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset, [train_size, cal_size, test_size])
+            train_size = int(len(mil_dataset) * 0.6)
+            train_dataset, cal_test_dataset = random_split(mil_dataset, [train_size, len(mil_dataset) - train_size])
 
         elif args.extract_feature_model == "resnet50" and False:
             save_path = "./data/camelyon16_rn50_feature_new_new"
-            mil_train_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=True)
-            mil_cal_test_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=False)
-            mil_dataset = ConcatDataset([mil_train_dataset, mil_cal_test_dataset])
-            cal_size = int(0.2 * len(mil_dataset))
-            test_size =  cal_size
-            train_size = len(mil_dataset) - test_size - cal_size
-            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset, [train_size, cal_size, test_size])
+            train_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=True)
+            cal_test_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=False)
 
         elif args.extract_feature_model == "resnet50":
             save_path = "./data/camelyon16_rn50_feature_new_new"
-            mil_train_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=True)
-            mil_cal_test_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=False)
-
-            cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-            test_size = len(mil_cal_test_dataset) - cal_size
-            mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
+            train_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=True)
+            cal_test_dataset = MILCamelyon16_rn50(device=device, path=save_path, train=False)
         else:
             raise NotImplementedError
-        return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
 
     elif dataset_name == "camelyon17":
         if args.multi_instance_learning != "True":
             raise ValueError("Please set multi-instance-learning to true.")
-
         assert args.batch_size == 1, print("Batch size must be 1.")
 
-        num_classes = 2
-        device = torch.device(f"cuda:{args.gpu}")
-
-        if args.save_feature == "True":
-            dataset = wilds.get_dataset(dataset="camelyon17", download=True)
-
-            train_dataset = dataset.get_subset("train")
-            #  Validation (ID)
-            id_cal_dataset = dataset.get_subset("id_val")
-            #  Validation(OOD)
-            od_cal_dataset = dataset.get_subset("val")
-            test_dataset = dataset.get_subset("test")
-
-            #  Make Sure the calibration data and the test data are exchangeable.
-            concat_dataset = ConcatDataset((id_cal_dataset, od_cal_dataset, test_dataset))
-
-            save_features(device=device, path="./data/camelyon17_features/train", dataset=train_dataset)
-            save_features(device=device, path="./data/camelyon17_features/test", dataset=concat_dataset)
-
-        mil_train_dataset = MILCamelyon17(device=device,path="./data/camelyon17_features/train")
-        mil_cal_test_dataset = MILCamelyon17(device, path="./data/camelyon17_features/test")
-        cal_size = int(args.cal_ratio * len(mil_cal_test_dataset))
-        test_size = len(mil_cal_test_dataset) - cal_size
-        mil_cal_dataset, mil_test_dataset = random_split(mil_cal_test_dataset, [cal_size, test_size])
-        return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
+        save_path = "./data/camelyon17_feature"
+        ds = MILCamelyon17(device=None, path=save_path)
+        num_classes = 4
+        train_size = int(len(ds)*0.6)
+        train_dataset, cal_test_dataset = random_split(ds, [train_size, len(ds) - train_size], args.extract_feature_model)
 
     elif dataset_name == "tcga_lung_cancer":
         if args.multi_instance_learning != "True":
@@ -135,22 +101,14 @@ def build_dataset(args):
             save_path = "./data/tcga_rn18_feature"
             mil_dataset = TCGA_rn18(device=device, path=save_path)
 
-            cal_size = int(len(mil_dataset) * 0.4 * args.cal_ratio)
-            test_size = int(len(mil_dataset) * 0.4 * (1 - args.cal_ratio))
-            train_size = len(mil_dataset) - test_size - cal_size
-            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset,
-                                                                                [train_size, cal_size, test_size])
-            return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
+            train_size = int(len(mil_dataset) * 0.6)
+            train_dataset, cal_test_dataset = random_split(mil_dataset,[train_size, len(mil_dataset) - train_size])
         elif args.extract_feature_model == "resnet50":
             save_path = "./data/tcga_rn50_feature"
             mil_dataset = TCGA_rn50(device=device, path=save_path)
 
-            cal_size = int(len(mil_dataset) * 0.4 * args.cal_ratio)
-            test_size = int(len(mil_dataset) * 0.4 * (1 - args.cal_ratio))
-            train_size = len(mil_dataset) - test_size - cal_size
-            mil_train_dataset, mil_cal_dataset, mil_test_dataset = random_split(mil_dataset,
-                                                                                [train_size, cal_size, test_size])
-            return mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes
+            train_size = int(len(mil_dataset) * 0.6)
+            train_dataset, cal_test_dataset = random_split(mil_dataset, [train_size, len(mil_dataset) - train_size])
         else:
             raise NotImplementedError
 
