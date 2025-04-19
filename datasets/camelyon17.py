@@ -1,6 +1,7 @@
 import csv
 import os
 import h5py
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
@@ -72,8 +73,8 @@ class MILCamelyon17(Dataset):
                 feat_data = f[key]["feat"]
                 label = df.loc[key+".tif", 1]
                 label = mapping_dict[label]
-                self.data_list.append(torch.tensor(feat_data, device=self.device))
-                self.label_list.append(torch.tensor(label, device=self.device))
+                self.data_list.append(torch.tensor(np.array(feat_data), device=self.device))
+                self.label_list.append(torch.tensor([label], device=self.device))
 
     def __len__(self):
         return len(self.label_list)  # Use label_list, not label
