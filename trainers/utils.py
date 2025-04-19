@@ -12,10 +12,6 @@ def optimal_thresh(fpr, tpr, thresholds, p=0):
 
 def five_scores(bag_labels, bag_predictions, n_classes):
     if n_classes != 2:
-
-        if bag_predictions.ndim == 1 or bag_predictions.shape[1] != n_classes:
-            bag_predictions = label_binarize(bag_predictions, classes=np.arange(n_classes))
-
         # AUC (OvR)
         auc_value = roc_auc_score(bag_labels, bag_predictions, multi_class='ovr')
 
