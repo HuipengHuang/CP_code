@@ -72,8 +72,8 @@ class MILCamelyon17(Dataset):
                 feat_data = f[key]["feat"]
                 label = df.loc[key+".tif", 1]
                 label = mapping_dict[label]
-                self.data_list.append(feat_data)
-                self.label_list.append(label)
+                self.data_list.append(torch.tensor(feat_data, device=self.device))
+                self.label_list.append(torch.tensor(label, device=self.device))
 
     def __len__(self):
         return len(self.label_list)  # Use label_list, not label

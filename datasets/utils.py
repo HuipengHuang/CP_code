@@ -14,7 +14,7 @@ from data_preprocess import csv2pth
 
 def build_dataset(args):
     dataset_name = args.dataset
-
+    device = torch.device(f"cuda:{args.gpu}")
     if dataset_name == "cifar10":
         from torchvision.datasets import CIFAR10
         num_classes = 10
@@ -81,7 +81,7 @@ def build_dataset(args):
         assert args.batch_size == 1, print("Batch size must be 1.")
 
         save_path = "./data/camelyon17_feature"
-        ds = MILCamelyon17(device=None, path=save_path, model_name=args.extract_feature_model)
+        ds = MILCamelyon17(device=device, path=save_path, model_name=args.extract_feature_model)
         num_classes = 4
         train_size = int(len(ds)*0.6)
         train_dataset, cal_test_dataset = random_split(ds, [train_size, len(ds) - train_size])
