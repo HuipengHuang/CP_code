@@ -97,7 +97,7 @@ class Predictor:
                     if self.num_classes == 2:
                         bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     else:
-                        bag_prob.append(prob.cpu().numpy())
+                        bag_prob.append(prob.cpu().squeeze().numpy())
                     score_tensor = self.score(prob)
                     average_set_size += (score_tensor <= self.threshold).sum().item()
                     coverage += (
@@ -127,7 +127,7 @@ class Predictor:
                     if self.num_classes == 2:
                         bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     else:
-                        bag_prob.append(prob.cpu().numpy())
+                        bag_prob.append(prob.cpu().squeeze().numpy())
 
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
