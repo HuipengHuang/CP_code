@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from .utils import five_scores
@@ -107,15 +108,21 @@ class Trainer:
 
                     test_loss = self.loss_function(output_list, target)
                     loss += test_loss.item()
-                    bag_prob.append(self.activation_function(bag_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+                    if self.num_classes == 2:
+                        bag_prob.append(self.activation_function(bag_logits)[:, 1].cpu().squeeze().numpy())
+                    else:
+                        bag_prob.append(self.activation_function(bag_logits).cpu().squeeze().numpy())
                 else:
                     test_logits = self.net(data)
 
                     test_loss = self.loss_function(test_logits, target)
                     loss += test_loss.item()
-                    bag_prob.append(self.activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
-
-            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
+                    if self.num_classes == 2:
+                        bag_prob.append(self.activation_function(test_logits)[:, 1].cpu().squeeze().numpy())
+                    else:
+                        bag_prob.append(self.activation_function(test_logits).cpu().squeeze().numpy())
+            bag_prob = np.stack(bag_prob, axis=0)
+            accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
             loss = loss / len(val_loader.dataset)
             print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
             return accuracy, auc_value, precision, recall, fscore, loss
