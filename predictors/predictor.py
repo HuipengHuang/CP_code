@@ -27,7 +27,7 @@ class Predictor:
         else:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
         self.device = torch.device(f"cuda:{args.gpu}")
-        self.substyping = True if num_classes == 2 else False
+        self.subtyping = True if num_classes == 2 else False
 
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
