@@ -9,13 +9,11 @@ def build_mil_model(args, num_classes):
     device = torch.device(f"cuda:{args.gpu}")
     net = None
 
-
-
     if model_type == "attention":
-        net = attention_base_model.AttentionModel(input_dim=args.input_dimension)
+        net = attention_base_model.AttentionModel(input_dim=args.input_dimension, output_dim=num_classes)
 
     elif model_type == "gradattention":
-        net = attention_base_model.GatedAttentionModel(input_dim=args.input_dimension)
+        net = attention_base_model.GatedAttentionModel(input_dim=args.input_dimension, output_dim=num_classes)
 
     elif model_type == "transmil":
         if args.final_activation_function != "sigmoid":
@@ -25,7 +23,7 @@ def build_mil_model(args, num_classes):
         net = net.to(device)
 
     elif model_type == "rrtmil":
-        net = rrtmil.RRT(input_dim=args.input_dimension)
+        net = rrtmil.RRT(n_classes=num_classes, input_dim=args.input_dimension)
 
     elif model_type == "dsmil":
         i_classifier = dsmil.FCLayer(in_size=args.input_dimension, out_size=num_classes).to(device)

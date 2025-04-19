@@ -12,7 +12,7 @@ from .utils import initialize_weights
 
 
 class AttentionModel(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, output_dim):
         super(AttentionModel, self).__init__()
         self.M = 500
         self.L = 128
@@ -30,7 +30,7 @@ class AttentionModel(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
+            nn.Linear(self.M*self.ATTENTION_BRANCHES, output_dim),
         )
 
         self.apply(initialize_weights)
@@ -94,7 +94,7 @@ class AttentionModel(nn.Module):
         return neg_log_likelihood, A
 
 class GatedAttentionModel(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, output_dim):
         super(GatedAttentionModel, self).__init__()
         self.M = 500
         self.L = 128
@@ -118,7 +118,7 @@ class GatedAttentionModel(nn.Module):
         self.attention_w = nn.Linear(self.L, self.ATTENTION_BRANCHES) # matrix w (or vector w if self.ATTENTION_BRANCHES==1)
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.M*self.ATTENTION_BRANCHES, 2),
+            nn.Linear(self.M*self.ATTENTION_BRANCHES, output_dim),
         )
 
         self.apply(initialize_weights)
