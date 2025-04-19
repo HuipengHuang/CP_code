@@ -115,7 +115,6 @@ def build_dataset(args):
     if args.algorithm != "standard":
         cal_size = int(len(cal_test_dataset) * args.cal_ratio)
         test_size = len(cal_test_dataset) - cal_size
-        print(cal_size, test_size)
         cal_dataset, test_dataset = random_split(cal_test_dataset, [cal_size, test_size])
     else:
         cal_dataset = None
