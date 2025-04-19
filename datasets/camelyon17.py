@@ -70,7 +70,7 @@ class MILCamelyon17(Dataset):
         with h5py.File(file_path, 'r') as f:
             for key in f.keys():
                 feat_data = f[key]["feat"]
-                label = df.loc[key, 1]
+                label = df.loc[key+".tif", 1]
                 label = mapping_dict[label]
                 self.data_list.append(feat_data)
                 self.label_list.append(label)
