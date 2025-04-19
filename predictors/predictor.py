@@ -56,7 +56,7 @@ class Predictor:
                 cal_score = torch.cat((cal_score, batch_score), 0)
 
             N = cal_score.shape[0]
-            threshold = torch.kthvalue(cal_score, math.ceil((1 - alpha) * (N + 1)), dim=0)
+            threshold = torch.kthvalue(cal_score, math.ceil((1 - alpha) * (N + 1)), dim=0).values.to(self.device)
             self.threshold = threshold
             return threshold
 
