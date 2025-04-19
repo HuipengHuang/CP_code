@@ -37,11 +37,12 @@ def standard(args):
 def cross_validation(args):
     # Load datasets
     mil_train_dataset, mil_cal_dataset, mil_test_dataset, num_classes = build_dataset(args)
-    print(len(mil_train_dataset), len(mil_test_dataset))
-    print(mil_cal_dataset)
 
     # Combine all datasets for k-fold CV
-    ds = ConcatDataset([mil_train_dataset, mil_cal_dataset, mil_test_dataset])
+    if mil_cal_dataset is None:
+        ds = ConcatDataset([mil_train_dataset, mil_test_dataset])
+    else:
+        ds = ConcatDataset([mil_train_dataset, mil_cal_dataset, mil_test_dataset])
     n_samples = len(ds)
 
     label = np.array([target.item() for _, target in ds])
