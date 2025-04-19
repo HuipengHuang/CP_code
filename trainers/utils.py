@@ -11,6 +11,7 @@ def optimal_thresh(fpr, tpr, thresholds, p=0):
 
 
 def five_scores(bag_labels, bag_predictions, sub_typing=False):
+    print(bag_labels.shape)
     if sub_typing:
         # --- Multi-Class Case ---
         n_classes = len(np.unique(bag_labels))
