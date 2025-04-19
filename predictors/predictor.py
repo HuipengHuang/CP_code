@@ -107,7 +107,7 @@ class Predictor:
                 bag_prob = np.concatenate(bag_prob, axis=0)
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
-                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, sub_typing=self.subtyping)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
@@ -130,8 +130,8 @@ class Predictor:
                         bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     else:
                         bag_prob.append(prob.cpu().squeeze().numpy())
-
-                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                bag_prob = np.concatenate(bag_prob, axis=0)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
                                "Fscore": fscore}

@@ -10,12 +10,9 @@ def optimal_thresh(fpr, tpr, thresholds, p=0):
     return fpr[idx], tpr[idx], thresholds[idx]
 
 
-def five_scores(bag_labels, bag_predictions, sub_typing=False):
-    if sub_typing:
-        # --- Multi-Class Case ---
-        n_classes = len(np.unique(bag_labels))
+def five_scores(bag_labels, bag_predictions, n_classes):
+    if n_classes != 2:
 
-        # Binarize labels for OvR AUC (if not already one-hot)
         if bag_predictions.ndim == 1 or bag_predictions.shape[1] != n_classes:
             bag_predictions = label_binarize(bag_predictions, classes=np.arange(n_classes))
 
