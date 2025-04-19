@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_fscore_support, accuracy_score
 import torch
+from sklearn.preprocessing import label_binarize
+
 
 def optimal_thresh(fpr, tpr, thresholds, p=0):
     loss = (fpr - tpr) - p * tpr / (fpr + tpr + 1)
@@ -9,21 +11,41 @@ def optimal_thresh(fpr, tpr, thresholds, p=0):
 
 
 def five_scores(bag_labels, bag_predictions, sub_typing=False):
-    fpr, tpr, threshold = roc_curve(bag_labels, bag_predictions, pos_label=1)
-    fpr_optimal, tpr_optimal, threshold_optimal = optimal_thresh(fpr, tpr, threshold)
-    # threshold_optimal=0.5
-
     if sub_typing:
+        # --- Multi-Class Case ---
+        n_classes = len(np.unique(bag_labels))
+
+        # Binarize labels for OvR AUC (if not already one-hot)
+        if bag_predictions.ndim == 1 or bag_predictions.shape[1] != n_classes:
+            bag_predictions = label_binarize(bag_predictions, classes=np.arange(n_classes))
+
+        # AUC (OvR)
         auc_value = roc_auc_score(bag_labels, bag_predictions, multi_class='ovr')
+
+        # Predict class labels (argmax of probabilities)
+        pred_labels = np.argmax(bag_predictions, axis=1)
+
+        # Metrics
+        precision, recall, F1, _ = precision_recall_fscore_support(
+            bag_labels, pred_labels, average='macro'
+        )
+        accuracy = accuracy_score(bag_labels, pred_labels)
+
     else:
-        auc_value = accuracy_score(bag_labels, bag_predictions)
-    this_class_label = np.array(bag_predictions)
-    this_class_label[this_class_label>=threshold_optimal] = 1
-    this_class_label[this_class_label<threshold_optimal] = 0
-    bag_predictions = this_class_label
-    avg = 'macro' if sub_typing else 'binary'
-    precision, recall, F1, _ = precision_recall_fscore_support(bag_labels, bag_predictions, average=avg)
-    accuracy = accuracy_score(bag_labels, bag_predictions)
+        # --- Binary Case ---
+        fpr, tpr, threshold = roc_curve(bag_labels, bag_predictions, pos_label=1)
+        fpr_optimal, tpr_optimal, threshold_optimal = optimal_thresh(fpr, tpr, threshold)
+
+        # Threshold predictions
+        pred_labels = np.where(bag_predictions >= threshold_optimal, 1, 0)
+
+        # AUC and metrics
+        auc_value = roc_auc_score(bag_labels, bag_predictions)
+        precision, recall, F1, _ = precision_recall_fscore_support(
+            bag_labels, pred_labels, average='binary'
+        )
+        accuracy = accuracy_score(bag_labels, pred_labels)
+
     return accuracy, auc_value, precision, recall, F1
 
 def get_cam_1d(classifier, features):
