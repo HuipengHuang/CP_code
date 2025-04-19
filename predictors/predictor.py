@@ -94,7 +94,10 @@ class Predictor:
                         test_logits = self.net(data)
 
                     prob = self.final_activation_function(test_logits)
-                    bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                    if self.num_classes == 2:
+                        bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                    else:
+                        bag_prob.append(prob)
                     score_tensor = self.score(prob)
                     average_set_size += (score_tensor <= self.threshold).sum().item()
                     coverage += (
@@ -102,7 +105,7 @@ class Predictor:
 
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
-                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,sub_typing=self.subtyping)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, sub_typing=self.subtyping)
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
@@ -120,8 +123,11 @@ class Predictor:
                         test_logits = self.net(data)[1]
                     else:
                         test_logits = self.net(data)
-
-                    bag_prob.append(self.final_activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+                    prob = self.final_activation_function(test_logits)
+                    if self.num_classes == 2:
+                        bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                    else:
+                        bag_prob.append(prob)
 
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
