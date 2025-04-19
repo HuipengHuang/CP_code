@@ -23,7 +23,7 @@ parser.add_argument("--final_activation_function",default="softmax", choices=["s
 parser.add_argument("--save_feature", default=None, choices=["True", "False"])
 parser.add_argument("--save_result", default=None, choices=["True", "False"])
 parser.add_argument("--extract_feature_model", default=None)
-parser.add_argument("--input_dimension", default=None, type=int, choices=[512, 1024])
+parser.add_argument("--input_dimension", default=None, type=int)
 parser.add_argument("--patience", default=None, type=int)
 parser.add_argument("--aggregation","-agg", default=None, type=str, choices=["max", "kmean"])
 parser.add_argument("--kfold", default=None, type=int)
