@@ -1,3 +1,5 @@
+import numpy as np
+
 from scores.utils import get_score, get_train_score
 import torch
 import torch.nn as nn
