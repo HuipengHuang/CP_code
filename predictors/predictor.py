@@ -27,6 +27,7 @@ class Predictor:
         else:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
         self.device = torch.device(f"cuda:{args.gpu}")
+        self.substyping = True if num_classes == 2 else False
 
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
@@ -101,7 +102,7 @@ class Predictor:
 
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
-                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,sub_typing=self.subtyping)
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
