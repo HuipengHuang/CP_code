@@ -104,7 +104,7 @@ class Predictor:
                     average_set_size += (score_tensor <= self.threshold).sum().item()
                     coverage += (
                                 score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.threshold).sum().item()
-                bag_prob = np.concatenate(bag_prob, axis=0)
+                bag_prob = np.stack(bag_prob, axis=0)
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
@@ -130,7 +130,7 @@ class Predictor:
                         bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
                     else:
                         bag_prob.append(prob.cpu().squeeze().numpy())
-                bag_prob = np.concatenate(bag_prob, axis=0)
+                bag_prob = np.stack(bag_prob, axis=0)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
