@@ -10,7 +10,6 @@ class StandardLoss(BaseLoss):
         else:
             self.T = 1
     def forward(self, logits, target):
-        print(logits.shape)
-        print(target.shape)
+        target = target.view(-1)
         loss = nn.CrossEntropyLoss()(logits / self.T, target)
         return loss
