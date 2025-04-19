@@ -81,10 +81,10 @@ def build_dataset(args):
         assert args.batch_size == 1, print("Batch size must be 1.")
 
         save_path = "./data/camelyon17_feature"
-        ds = MILCamelyon17(device=None, path=save_path)
+        ds = MILCamelyon17(device=None, path=save_path, model_name=args.extract_feature_model)
         num_classes = 4
         train_size = int(len(ds)*0.6)
-        train_dataset, cal_test_dataset = random_split(ds, [train_size, len(ds) - train_size], args.extract_feature_model)
+        train_dataset, cal_test_dataset = random_split(ds, [train_size, len(ds) - train_size])
 
     elif dataset_name == "tcga_lung_cancer":
         if args.multi_instance_learning != "True":
