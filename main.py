@@ -29,6 +29,7 @@ parser.add_argument("--aggregation","-agg", default=None, type=str, choices=["ma
 parser.add_argument("--kfold", default=None, type=int)
 parser.add_argument("--ktime", default=1, type=int)
 parser.add_argument("--dropout", default=None, type=float)
+parser.add_argument("--stratified", default="True", type=str)
 
 #  Training configuration
 parser.add_argument("--optimizer", type=str, default="sgd", choices=["sgd", "adam"], help="Choose optimizer.")
