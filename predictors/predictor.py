@@ -105,11 +105,12 @@ class Predictor:
                     coverage += (
                                 score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.threshold).sum().item()
                 bag_prob = np.stack(bag_prob, axis=0)
+                top1_acc = np.mean(np.argmax(bag_prob, axis=1) == bag_labels)
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
                 print(
-                    f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                    f"average set size: {average_set_size}, coverage: {coverage}, top1 accuracy: {top1_acc} accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
                                "AUC": auc_value, "Precision": precision, "Recall": recall, "Fscore": fscore}
                 return result_dict

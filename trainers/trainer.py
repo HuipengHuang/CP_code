@@ -123,8 +123,9 @@ class Trainer:
                         bag_prob.append(self.activation_function(test_logits).cpu().squeeze().numpy())
             bag_prob = np.stack(bag_prob, axis=0)
             accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
+            top1_acc = np.mean(np.argmax(bag_prob, axis=1) == bag_labels)
             loss = loss / len(val_loader.dataset)
-            print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
+            print(f"top1 accuracy:{top1_acc} accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}, loss:{loss}")
             return accuracy, auc_value, precision, recall, fscore, loss
 
     def train(self, train_loader, epochs, val_loader=None):
