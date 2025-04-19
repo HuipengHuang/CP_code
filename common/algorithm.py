@@ -1,6 +1,6 @@
 import numpy as np
 from torch.utils.data import ConcatDataset, Subset, DataLoader
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, KFold
 from datasets.utils import build_dataloader, build_dataset
 from trainers.get_trainer import get_trainer
 from common.utils import save_exp_result
@@ -47,10 +47,13 @@ def cross_validation(args):
     label = np.array([target.item() for _, target in ds])
 
     all_results = []
-
+    if args.stratified == "True":
+        KFOLD = StratifiedKFold
+    else:
+        KFOLD = KFold
     # Repeat k-fold CV for args.ktime times
     for time in range(args.ktime):
-        skf = StratifiedKFold(n_splits=args.kfold, shuffle=True, random_state=args.seed+time if args.seed else None)
+        skf = KFOLD(n_splits=args.kfold, shuffle=True, random_state=args.seed+time if args.seed else None)
         # Perform k-fold CV
         for fold, (train_idx, test_idx) in enumerate(skf.split(np.arange(n_samples), label)):
             print(f"\nTime {time + 1}/{args.ktime}, Fold {fold + 1}/{args.kfold}")
@@ -62,7 +65,7 @@ def cross_validation(args):
 
             # Create data loaders
             if args.algorithm == "cp":
-                skf_cal = StratifiedKFold(n_splits=args.kfold - 1, shuffle=True, random_state=args.seed+time+fold if args.seed else None)
+                skf_cal = KFOLD(n_splits=args.kfold - 1, shuffle=True, random_state=args.seed+time+fold if args.seed else None)
                 train_label = np.array([target.item() for _, target in train_subset])
                 train_sub_idx, cal_idx = next(iter(skf_cal.split(np.arange(len(train_subset)), train_label)))
                 cal_subset = Subset(train_subset,cal_idx)
