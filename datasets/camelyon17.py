@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
-from torch.utils.data import Dataset
-
+from torch.utils.data import Dataset, Subset
+from sklearn.model_selection import KFold
 
 class OldMILCamelyon17(Dataset):
     def __init__(self, device, path):
@@ -66,16 +66,16 @@ class MILCamelyon17(Dataset):
             raise NotImplementedError
 
         df = pd.read_csv(f"{path}/label.csv", header=None, index_col=0)
-
+        self.mapping = {}
         mapping_dict = {"negative": 0, "itc": 1, "micro": 2, "macro": 3}
         with h5py.File(file_path, 'r') as f:
-            for key in f.keys():
+            for idx, key in enumerate(f.keys()):
                 feat_data = f[key]["feat"]
                 label = df.loc[key+".tif", 1]
                 label = mapping_dict[label]
                 self.data_list.append(torch.tensor(np.array(feat_data), device=self.device, dtype=torch.float32))
                 self.label_list.append(torch.tensor([label], device=self.device))
-
+                mapping_dict[key] = idx
     def __len__(self):
         return len(self.label_list)  # Use label_list, not label
 
@@ -84,10 +84,27 @@ class MILCamelyon17(Dataset):
         label = self.label_list[idx]
         return data, label
 
-
-
-
-
+    def kfold_split(self, train_patient_idx, cal_patient_idx=None ,test_patient_idx=None):
+            train_bag_index = []
+            test_bag_index = []
+            cal_bag_index = []
+            for idx in train_patient_idx:
+                for i in range(5):
+                    train_bag_index.append(self.mapping[f"patient_{str(idx).zfill(3)}_node_{i}.tif"])
+            for idx in test_patient_idx:
+                for i in range(5):
+                    test_bag_index.append(self.mapping[f"patient_{str(idx).zfill(3)}_node_{i}.tif"])
+            if cal_patient_idx is not None:
+                for idx in cal_patient_idx:
+                    for i in range(5):
+                        cal_bag_index.append(self.mapping[f"patient_{str(idx).zfill(3)}_node_{i}.tif"])
+            train_set = Subset(self, train_bag_index)
+            test_set = Subset(self, test_bag_index)
+            if cal_patient_idx is not None:
+                cal_set = Subset(self, cal_bag_index)
+            else:
+                cal_set = None
+            return train_set, cal_set, test_set
 """class MILCamelyon17(Dataset):
     def __init__(self, dataset, device, transform=transforms.ToTensor()):
         self.device = device
