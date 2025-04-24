@@ -172,7 +172,7 @@ class MaxPredictor(AggPredictor):
                 logits = self.net(data[:, i * self.length : i * self.length + self.length, :])[1]
             else:
                 logits = self.net(data[:, i * self.length : i * self.length + self.length, :])
-            print(logits.shape)
+            print(data[:, i * self.length : i * self.length + self.length, :].shape)
             instance_prob = self.final_activation_function(logits)
 
             if prob[:, 1] < instance_prob[:, 1]:
