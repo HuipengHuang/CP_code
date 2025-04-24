@@ -42,14 +42,14 @@ class WeightPredictor:
                 data = data.to(self.device)
                 target = target.to(self.device)
                 instance_weight = self.weight(data)
-                instance_weight = torch.softmax(instance_weight, dim=-1)
+                instance_weight = torch.softmax(instance_weight, dim=-1).squeeze(dim=0)
                 instance_prob_list = []
                 for instance in data.squeeze(0):
                     if self.args.model == "dsmil":
                         instance_logits = self.net(instance.view(1, 1, -1))[1]
                     else:
                         instance_logits = self.net(instance.view(1, 1, -1))
-                    instance_prob = self.final_activation_function(instance_logits)
+                    instance_prob = self.final_activation_function(instance_logits).squeeze(dim=0)
                     instance_prob_list.append(instance_prob[target])
                 all_instance_probs = torch.stack(instance_prob_list, dim=0)
                 all_instances_score = self.score(all_instance_probs)
@@ -101,7 +101,7 @@ class WeightPredictor:
             with torch.no_grad():
                 for i, (data, target) in enumerate(test_loader):
                     w = self.weight(data)
-                    w = torch.softmax(w, dim=-1)
+                    w = torch.softmax(w, dim=-1).squeeze(dim=0)
                     bag_labels.append(target.item())
                     data = data.to(self.device)
                     target = target.to(self.device)
@@ -118,7 +118,7 @@ class WeightPredictor:
                             instance_logits = self.net(instance.view(1, 1, -1))[1]
                         else:
                             instance_logits = self.net(instance.view(1, 1, -1))
-                        instance_prob = self.final_activation_function(instance_logits)
+                        instance_prob = self.final_activation_function(instance_logits).squeeze(dim=0)
                         instance_prob_list.append(instance_prob)
                     all_instance_prob = torch.stack(instance_prob_list, dim=0)
                     all_instance_score = self.score(all_instance_prob)

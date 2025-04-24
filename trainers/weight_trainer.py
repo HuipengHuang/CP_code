@@ -27,19 +27,18 @@ class WeightTrainer(Trainer):
             target_list = []
             for data, target in tqdm(dataloader, desc=f"{epoch+1} / {epochs}"):
                 instance_weight = self.weight(data)
-                instance_weight = torch.softmax(instance_weight, dim=-1)
+                instance_weight = torch.softmax(instance_weight, dim=-1).squeeze(dim=0)
                 target_list.append(target)
                 instance_prob_list = []
                 for instance in data.squeeze(0):
                     instance_logits = self.net(instance.view(1, 1, -1))
-                    instance_prob = self.activation_function(instance_logits)
+                    instance_prob = self.activation_function(instance_logits).squeeze(dim=0)
                     instance_prob_list.append(instance_prob)
 
-                batch_instance_prob = torch.stack(instance_prob_list, dim=0)
+                all_instance_prob = torch.stack(instance_prob_list, dim=0)
 
-                bag_score = self.predictor.score(batch_instance_prob)
+                bag_score = self.predictor.score(all_instance_prob)
                 weighted_score = (bag_score * instance_weight).sum(dim=0)
-                print(bag_score.shape, instance_weight.shape, weighted_score.shape)
                 weight_score_list.append(weighted_score)
                 if(len(weight_score_list) == 2):
                     batch_score = torch.stack(weight_score_list, dim=0)
@@ -50,4 +49,3 @@ class WeightTrainer(Trainer):
                     self.weight_optimizer.step()
                     weight_score_list = []
                     target_list = []
-                    print("haha")
