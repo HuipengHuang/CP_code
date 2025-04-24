@@ -11,6 +11,7 @@ parser.add_argument("--gpu", type=int, help="CUDA device ID (e.g., 0, 1, etc.)")
 parser.add_argument("--dataset", type=str, default="cifar100",
                     choices=["cifar10", "cifar100", "imagenet", "mnist_bag", "camelyon17", "camelyon16", "tcga_lung_cancer"],
                     help="Choose dataset for training.")
+parser.add_argument("--weight", default=None, type=str, choices=["True", "False"])
 parser.add_argument('--seed', type=int, default=None)
 parser.add_argument("--pretrained", default="False", type=str, choices=["True", "False"])
 parser.add_argument("--save", default="False", choices=["True", "False"], type=str)

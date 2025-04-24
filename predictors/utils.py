@@ -7,7 +7,7 @@ import torch
 def get_predictor(args, net, num_classes, adapter=None, final_activation_function="softmax"):
     if args.model == "dtfdmil":
         predictor = DTFDPredictor(args, net, num_classes, final_activation_function, adapter)
-    elif args.model == "weight":
+    elif args.weight == "True":
         predictor = WeightPredictor(args, net, num_classes, final_activation_function, adapter)
     elif args.aggregation is not None:
         if args.aggregation == "max":

@@ -35,9 +35,9 @@ class WeightTrainer(Trainer):
                     instance_prob = self.activation_function(instance_logits)
                     instance_prob_list.append(instance_prob)
 
-                batch__instance_prob = torch.stack(instance_prob_list, dim=0)
+                batch_instance_prob = torch.stack(instance_prob_list, dim=0)
 
-                bag_score = self.predictor.score(batch__instance_prob)
+                bag_score = self.predictor.score(batch_instance_prob)
                 weighted_score = (bag_score * instance_weight).sum(dim=0)
                 weight_score_list.append(weighted_score)
                 if(len(weight_score_list) == 32):
