@@ -31,7 +31,7 @@ class WeightTrainer(Trainer):
                 target_list.append(target)
                 instance_prob_list = []
                 for instance in data.squeeze(0):
-                    print(instance.shape)
+                    print(instance.unsqueeze(dim=0).shape)
                     instance_logits = self.net(instance.unsqueeze(dim=0))
                     instance_prob = self.activation_function(instance_logits)
                     instance_prob_list.append(instance_prob)
