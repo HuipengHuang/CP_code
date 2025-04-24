@@ -15,7 +15,7 @@ class WeightTrainer(Trainer):
 
     def train(self, train_loader, epochs, val_loader=None):
         super().train(train_loader, epochs, val_loader)
-        self.train_weight(train_loader, 10)
+        self.train_weight(train_loader, 1)
 
     def train_weight(self, dataloader, epochs):
         for param in self.net.parameters():
@@ -31,6 +31,7 @@ class WeightTrainer(Trainer):
                 target_list.append(target)
                 instance_prob_list = []
                 for instance in data.squeeze(0):
+                    print(instance.shape)
                     instance_logits = self.net(instance.unsqueeze(dim=0))
                     instance_prob = self.activation_function(instance_logits)
                     instance_prob_list.append(instance_prob)
