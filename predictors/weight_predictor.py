@@ -54,6 +54,7 @@ class WeightPredictor:
                 all_instance_probs = torch.stack(instance_prob_list, dim=0)
                 all_instances_score = self.score(all_instance_probs)
                 bag_socre = (all_instances_score * instance_weight).sum(dim=0)
+                print(bag_socre)
                 cal_list.append(bag_socre)
 
             cal_score = torch.cat(cal_list, dim=0)

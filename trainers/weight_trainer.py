@@ -23,6 +23,7 @@ class WeightTrainer(Trainer):
         self.weight.train()
 
         for epoch in range(epochs):
+            break
             weight_score_list = []
             target_list = []
             for data, target in tqdm(dataloader, desc=f"{epoch+1} / {epochs}"):
