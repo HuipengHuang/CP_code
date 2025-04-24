@@ -112,14 +112,13 @@ def build_dataset(args):
         else:
             raise NotImplementedError
 
-    if args.algorithm != "standard" and args.multi_instance_learning != "True":
+    if args.algorithm != "standard":
         cal_size = int(len(cal_test_dataset) * args.cal_ratio)
         test_size = len(cal_test_dataset) - cal_size
         cal_dataset, test_dataset = random_split(cal_test_dataset, [cal_size, test_size])
     else:
         cal_dataset = None
         test_dataset = cal_test_dataset
-
     return train_dataset, cal_dataset, test_dataset, num_classes
 
 
