@@ -7,7 +7,7 @@ from loss import contr_loss
 class WeightTrainer(Trainer):
     def __init__(self, args, num_classes):
         super().__init__(args, num_classes)
-        weight = nn.Sequential(nn.Linear(args.input_dimension, 256), nn.ReLU(), nn.Linear(256, 64), nn.ReLU(), nn.Linear(64, num_classes)).to(self.device)
+        weight = nn.Sequential(nn.Linear(args.input_dimension, 256), nn.ReLU(), nn.Linear(256, 64), nn.ReLU(), nn.Linear(64, 1)).to(self.device)
         self.weight = weight
         self.predictor.weight = weight
         self.weight_optimizer = torch.optim.Adam(weight.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
@@ -23,7 +23,6 @@ class WeightTrainer(Trainer):
         self.weight.train()
 
         for epoch in range(epochs):
-            break
             weight_score_list = []
             target_list = []
             for data, target in tqdm(dataloader, desc=f"{epoch+1} / {epochs}"):
@@ -40,6 +39,7 @@ class WeightTrainer(Trainer):
 
                 bag_score = self.predictor.score(all_instance_prob)
                 weighted_score = (bag_score * instance_weight).sum(dim=0)
+                print(weighted_score)
                 weight_score_list.append(weighted_score)
                 if(len(weight_score_list) == 2):
                     batch_score = torch.stack(weight_score_list, dim=0)

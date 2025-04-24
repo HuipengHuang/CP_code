@@ -123,6 +123,7 @@ class WeightPredictor:
                         instance_prob_list.append(instance_prob)
                     all_instance_prob = torch.stack(instance_prob_list, dim=0)
                     all_instance_score = self.score(all_instance_prob)
+
                     bag_score = (all_instance_score * w).sum(dim=0)
 
                     average_set_size += (bag_score <= self.agg_threshold).sum().item()
