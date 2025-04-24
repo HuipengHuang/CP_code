@@ -41,8 +41,8 @@ class WeightPredictor:
             for i, (data, target) in enumerate(cal_loader):
                 data = data.to(self.device)
                 target = target.to(self.device)
-                instance_weight = self.weight(data)
-                instance_weight = torch.softmax(instance_weight, dim=-1).squeeze(dim=0)
+                instance_weight = self.weight(data).squeeze(dim=0)
+                instance_weight = torch.softmax(instance_weight, dim=0)
                 instance_prob_list = []
                 for instance in data.squeeze(0):
                     if self.args.model == "dsmil":
@@ -101,8 +101,8 @@ class WeightPredictor:
 
             with torch.no_grad():
                 for i, (data, target) in enumerate(test_loader):
-                    w = self.weight(data)
-                    w = torch.softmax(w, dim=-1).squeeze(dim=0)
+                    w = self.weight(data).squeeze(0)
+                    w = torch.softmax(w, dim=0)
                     bag_labels.append(target.item())
                     data = data.to(self.device)
                     target = target.to(self.device)
