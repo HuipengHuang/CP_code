@@ -46,9 +46,9 @@ class WeightPredictor:
                 instance_prob_list = []
                 for instance in data.squeeze(0):
                     if self.args.model == "dsmil":
-                        instance_logits = self.net(instance.view(1, -1))[1]
+                        instance_logits = self.net(instance.view(1, 1, -1))[1]
                     else:
-                        instance_logits = self.net(instance.view(1, -1))
+                        instance_logits = self.net(instance.view(1, 1, -1))
                     instance_prob = self.final_activation_function(instance_logits)
                     instance_prob_list.append(instance_prob[target])
                 all_instance_probs = torch.stack(instance_prob_list, dim=0)
@@ -115,9 +115,9 @@ class WeightPredictor:
                     instance_prob_list = []
                     for instance in data.squeeze(0):
                         if self.args.model == "dsmil":
-                            instance_logits = self.net(instance.view(1, -1))[1]
+                            instance_logits = self.net(instance.view(1, 1, -1))[1]
                         else:
-                            instance_logits = self.net(instance.view(1, -1))
+                            instance_logits = self.net(instance.view(1, 1, -1))
                         instance_prob = self.final_activation_function(instance_logits)
                         instance_prob_list.append(instance_prob)
                     all_instance_prob = torch.stack(instance_prob_list, dim=0)
