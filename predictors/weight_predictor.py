@@ -1,5 +1,3 @@
-import numpy as np
-
 from scores.utils import get_score, get_train_score
 import torch
 import torch.nn as nn
@@ -7,8 +5,9 @@ import math
 import torchsort
 from trainers.utils import five_scores
 
-class Predictor:
-    def __init__(self, args, net, num_classes, final_activation_function, adapter=None):
+
+class WeightPredictor:
+    def __init__(self, args, net, num_classes, final_activation_function ,adapter=None):
         self.args = args
         self.test_score = get_score(args)
         if args.train_score is None:
@@ -29,7 +28,7 @@ class Predictor:
         else:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
         self.device = torch.device(f"cuda:{args.gpu}")
-        self.subtyping = False if num_classes == 2 else True
+        self.weight = None
 
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
@@ -37,45 +36,31 @@ class Predictor:
         with torch.no_grad():
             if alpha is None:
                 alpha = self.alpha
-            cal_score = torch.tensor([], device=self.device)
-            for data, target in cal_loader:
+            cal_list = []
+            for i, (data, target) in enumerate(cal_loader):
                 data = data.to(self.device)
                 target = target.to(self.device)
+                instance_weight = self.weight(data)
+                instance_weight = torch.softmax(instance_weight, dim=-1)
+                instance_prob_list = []
+                for instance in data.squeeze(0):
+                    if self.args.model == "dsmil":
+                        instance_logits = self.net(instance.view(1, -1))[1]
+                    else:
+                        instance_logits = self.net(instance.view(1, -1))
+                    instance_prob = self.final_activation_function(instance_logits)
+                    instance_prob_list.append(instance_prob[target])
+                all_instance_probs = torch.stack(instance_prob_list, dim=0)
+                all_instances_score = self.score(all_instance_probs)
+                bag_socre = (all_instances_score * instance_weight).sum(dim=0)
+                cal_list.append(bag_socre)
 
-                if self.args.model == "dsmil":
-                    logits = self.net(data)[1]
-                else:
-                    logits = self.net(data)
-
-                if self.adapter is not None:
-                    logits = self.adapter(logits)
-
-                prob = self.final_activation_function(logits)
-                batch_score = self.score.compute_target_score(prob, target)
-
-                cal_score = torch.cat((cal_score, batch_score), 0)
-
+            cal_score = torch.cat(cal_list, dim=0)
             N = cal_score.shape[0]
-            threshold = torch.kthvalue(cal_score, math.ceil((1 - alpha) * (N + 1)), dim=0).values.to(self.device)
+            threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
             return threshold
 
-
-
-    def calibrate_batch_logit(self, logits, target, alpha):
-        """Design for conformal training, which needs to compute threshold in every batch"""
-        prob = self.final_activation_function(logits)
-        batch_score = self.score.compute_target_score(prob, target)
-        N = target.shape[0]
-        return torch.quantile(batch_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
-
-    def smooth_calibrate_batch_logit(self, logits, target, alpha):
-        prob = self.final_activation_function(logits)
-        batch_score = self.score.compute_target_score(prob, target)
-        N = target.shape[0]
-        sorted_score = torchsort.soft_sort(batch_score.unsqueeze(0), regularization_strength=0.1)
-        threshold = sorted_score[0, math.ceil((1 - alpha) * (N + 1)) - 1]
-        return threshold
 
     def evaluate(self, test_loader):
         self.set_mode("test")
@@ -85,8 +70,11 @@ class Predictor:
             bag_prob, bag_labels = [], []
             average_set_size = 0
             coverage = 0
+
             with torch.no_grad():
                 for i, (data, target) in enumerate(test_loader):
+                    w = self.weight(data)
+                    w = torch.softmax(w, dim=-1)
                     bag_labels.append(target.item())
                     data = data.to(self.device)
                     target = target.to(self.device)
@@ -96,18 +84,27 @@ class Predictor:
                         test_logits = self.net(data)
 
                     prob = self.final_activation_function(test_logits)
-                    if self.num_classes == 2:
-                        bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
-                    else:
-                        bag_prob.append(prob.cpu().squeeze().numpy())
-                    score_tensor = self.score(prob)
-                    average_set_size += (score_tensor <= self.threshold).sum().item()
-                    coverage += (
-                                score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.threshold).sum().item()
-                bag_prob = np.stack(bag_prob, axis=0)
+                    bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                    instance_prob_list = []
+                    for instance in data.squeeze(0):
+                        if self.args.model == "dsmil":
+                            instance_logits = self.net(instance.view(1, -1))[1]
+                        else:
+                            instance_logits = self.net(instance.view(1, -1))
+                        instance_prob = self.final_activation_function(instance_logits)
+                        instance_prob_list.append(instance_prob)
+                    all_instance_prob = torch.stack(instance_prob_list, dim=0)
+                    all_instance_score = self.score(all_instance_score)
+                    bag_score = (all_instance_score * w).sum(dim=0)
+
+                    average_set_size += (bag_score < self.threshold).sum().item()
+                    coverage += (bag_score[target] < self.threshold).item()
+
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
-                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
+                print(coverage)
+                print(average_set_size)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob,)
                 print(
                     f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
@@ -125,13 +122,10 @@ class Predictor:
                         test_logits = self.net(data)[1]
                     else:
                         test_logits = self.net(data)
-                    prob = self.final_activation_function(test_logits)
-                    if self.num_classes == 2:
-                        bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
-                    else:
-                        bag_prob.append(prob.cpu().squeeze().numpy())
-                bag_prob = np.stack(bag_prob, axis=0)
-                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, n_classes=self.num_classes)
+
+                    bag_prob.append(self.final_activation_function(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
                                "Fscore": fscore}

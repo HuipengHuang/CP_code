@@ -1,5 +1,5 @@
 import torch
 import torch.nn as nn
-loss = nn.CrossEntropyLoss()
-x = torch.load(r"E:\PycharmProjects\conftr\normal_001.pt")
-print(x.shape)
+x = torch.ones(size=(32, 3))
+y = torch.ones(size=(32, 1))
+print((x * y).sum(dim=0).shape)

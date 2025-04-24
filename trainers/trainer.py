@@ -142,6 +142,8 @@ class Trainer:
 
 
 
+
+
     def set_train_mode(self, train_net, train_adapter):
         assert self.adapter is not None, print("The trainer does not have an adapter.")
         if not train_adapter:

@@ -1,3 +1,7 @@
+import math
+
+import torchsort
+
 from .base_loss import BaseLoss
 import torch
 import torch.nn.functional as F
@@ -10,7 +14,7 @@ class ConftrLoss(BaseLoss):
         self.predictor = predictor
         self.batch_size = args.batch_size
         if args.temperature is None:
-            self.T = 1
+            self.T = 1e-4
         else:
             self.T = args.temperature
 
@@ -56,3 +60,29 @@ class ConftrLoss(BaseLoss):
 
         loss = torch.sum(torch.maximum(l1 + l2, torch.zeros_like(l1)), dim=1)
         return torch.mean(loss)
+
+    def weight_forward(self, score, target):
+         """
+         score: shape [batch_size, num_classes]
+         Design for multi-instance learning.
+         score is weighted sum of instance score"""
+         shuffled_indices = torch.randperm(score.size(0))
+         shuffled_score = score[shuffled_indices]
+         shuffled_target = target[shuffled_indices]
+
+         pred_size = int(shuffled_target.size(0) * 0.5)
+         pred_score, cal_score = shuffled_score[:pred_size], shuffled_score[pred_size:]
+         pred_target, cal_target = shuffled_target[:pred_size], shuffled_target[pred_size:]
+
+         batch_score = cal_score[torch.arange(cal_score.shape[0]), cal_target]
+         sorted_score = torchsort.soft_sort(batch_score.unsqueeze(0), regularization_strength=0.1)
+         N = cal_target.shape[0]
+         threshold = sorted_score[0, math.ceil((1 - self.alpha) * (N + 1)) - 1]
+
+         smooth_pred = torch.sigmoid((threshold - pred_score) / self.T)
+         size_loss = self.compute_size_loss(smooth_pred)
+         loss = size_loss
+         #class_loss = self.compute_classification_loss(smooth_pred, pred_target)
+         #loss = torch.log(class_loss + self.size_loss_weight * size_loss + 1e-8)
+
+         return loss

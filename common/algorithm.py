@@ -43,11 +43,12 @@ def cross_validation(args):
         ds = ConcatDataset([mil_train_dataset, mil_test_dataset])
     else:
         ds = ConcatDataset([mil_train_dataset, mil_cal_dataset, mil_test_dataset])
+
     n_samples = len(ds)
     label = np.array([target.item() for _, target in ds])
 
     all_results = []
-    if args.stratified == "True":
+    if args.stratified:
         KFOLD = StratifiedKFold
     else:
         KFOLD = KFold

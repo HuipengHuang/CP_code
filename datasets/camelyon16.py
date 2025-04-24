@@ -130,27 +130,6 @@ class MILCamelyon16_rn50(Dataset):
         label = self.label_list[idx]
         return data, label
 
-    def kfold_split(self, train_patient_idx, cal_patient_idx=None ,test_patient_idx=None):
-            train_bag_index = []
-            test_bag_index = []
-            cal_bag_index = []
-            for idx in train_patient_idx:
-                for i in range(5):
-                    train_bag_index.append(self.mapping[f"patient_{str(idx).zfill(3)}_node_{i}.tif"])
-            for idx in test_patient_idx:
-                for i in range(5):
-                    test_bag_index.append(self.mapping[f"patient_{str(idx).zfill(3)}_node_{i}.tif"])
-            if cal_patient_idx is not None:
-                for idx in cal_patient_idx:
-                    for i in range(5):
-                        cal_bag_index.append(self.mapping[f"patient_{str(idx).zfill(3)}_node_{i}.tif"])
-            train_set = Subset(self, train_bag_index)
-            test_set = Subset(self, test_bag_index)
-            if cal_patient_idx is not None:
-                cal_set = Subset(self, cal_bag_index)
-            else:
-                cal_set = None
-            return train_set, cal_set, test_set
 
 
 
