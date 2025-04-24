@@ -39,6 +39,8 @@ class WeightTrainer(Trainer):
 
                 bag_score = self.predictor.score(all_instance_prob)
                 weighted_score = (bag_score * instance_weight).sum(dim=0)
+                print("---")
+                print(instance_weight.sum())
                 print(weighted_score)
                 weight_score_list.append(weighted_score)
                 if(len(weight_score_list) == 2):
