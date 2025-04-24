@@ -220,4 +220,3 @@ class WeightPredictor:
         else:
             raise ValueError(f"mode {mode} is not supported. Mode could only be train or test")
 
-

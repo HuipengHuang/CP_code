@@ -42,7 +42,7 @@ class WeightTrainer(Trainer):
                 weighted_score = (bag_score * instance_weight).sum(dim=0)
 
                 weight_score_list.append(weighted_score)
-                if(len(weight_score_list) == 2):
+                if(len(weight_score_list) == 32):
                     batch_score = torch.stack(weight_score_list, dim=0)
                     batch_target = torch.cat(target_list, dim=0)
                     loss = self.weight_loss.weight_forward(batch_score, batch_target)
