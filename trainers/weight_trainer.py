@@ -10,7 +10,7 @@ class WeightTrainer(Trainer):
         weight = nn.Sequential(nn.Linear(args.input_dimension, 256), nn.ReLU(), nn.Linear(256, 64), nn.ReLU(), nn.Linear(64, num_classes))
         self.weight = weight
         self.predictor.weight = weight
-        self.weight_optimizer = torch.optim.Adam(weight.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        self.weight_optimizer = torch.optim.Adam(weight.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
         self.weight_loss = contr_loss.ConftrLoss(args, self.predictor)
 
     def train(self, train_loader, epochs, val_loader=None):
