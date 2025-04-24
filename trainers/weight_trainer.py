@@ -7,7 +7,7 @@ from loss import contr_loss
 class WeightTrainer(Trainer):
     def __init__(self, args, num_classes):
         super().__init__(args, num_classes)
-        weight = nn.Sequential(nn.Linear(args.input_dimension, 256), nn.ReLU(), nn.Linear(256, 64), nn.ReLU(), nn.Linear(64, num_classes))
+        weight = nn.Sequential(nn.Linear(args.input_dimension, 256), nn.ReLU(), nn.Linear(256, 64), nn.ReLU(), nn.Linear(64, num_classes)).to(self.device)
         self.weight = weight
         self.predictor.weight = weight
         self.weight_optimizer = torch.optim.Adam(weight.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
