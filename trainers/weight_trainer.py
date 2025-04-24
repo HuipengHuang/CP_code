@@ -18,7 +18,7 @@ class WeightTrainer(Trainer):
         self.train_weight(train_loader, 10)
 
     def train_weight(self, dataloader, epochs):
-        for param in self.net:
+        for param in self.net.parameters():
             param.requires_grad = False
         self.weight.train()
 
