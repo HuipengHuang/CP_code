@@ -29,6 +29,7 @@ class WeightPredictor:
             raise NotImplementedError(f"activation function {final_activation_function} is not implemented.")
         self.device = torch.device(f"cuda:{args.gpu}")
         self.weight = None
+        self.agg_threshold = None
 
     def calibrate(self, cal_loader, alpha=None):
         """ Input calibration dataloader.
@@ -57,14 +58,40 @@ class WeightPredictor:
 
             cal_score = torch.cat(cal_list, dim=0)
             N = cal_score.shape[0]
+            agg_threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
+            self.agg_threshold = agg_threshold
+
+            cal_score = torch.tensor([], device=self.device)
+            for data, target in cal_loader:
+                data = data.to(self.device)
+                target = target.to(self.device)
+
+                logits = self.net(data)
+                if self.adapter is not None:
+                    logits = self.adapter(logits)
+                prob = self.final_activation_function(logits)
+
+                batch_score = self.score.compute_target_score(prob, target)
+
+                cal_score = torch.cat((cal_score, batch_score), 0)
+
+            N = cal_score.shape[0]
             threshold = torch.quantile(cal_score, math.ceil((1 - alpha) * (N + 1)) / N, dim=0)
             self.threshold = threshold
-            return threshold
 
+            return agg_threshold
 
     def evaluate(self, test_loader):
+        agg_result = self.evaluate_with_aggregation(test_loader)
+        standard_result = self.standard_aggregation(test_loader)
+        result_dict = {**standard_result, **agg_result}
+        return result_dict
+
+
+    def evaluate_with_aggregation(self, test_loader):
         self.set_mode("test")
         self.net.eval()
+        self.weight.eval()
         """Use conformal prediction when threshold is not None."""
         if self.threshold is not None:
             bag_prob, bag_labels = [], []
@@ -94,11 +121,11 @@ class WeightPredictor:
                         instance_prob = self.final_activation_function(instance_logits)
                         instance_prob_list.append(instance_prob)
                     all_instance_prob = torch.stack(instance_prob_list, dim=0)
-                    all_instance_score = self.score(all_instance_score)
+                    all_instance_score = self.score(all_instance_prob)
                     bag_score = (all_instance_score * w).sum(dim=0)
 
-                    average_set_size += (bag_score < self.threshold).sum().item()
-                    coverage += (bag_score[target] < self.threshold).item()
+                    average_set_size += (bag_score <= self.agg_threshold).sum().item()
+                    coverage += (bag_score[target] <= self.agg_threshold).item()
 
                 coverage = coverage / len(test_loader.dataset)
                 average_set_size = average_set_size / len(test_loader.dataset)
@@ -127,6 +154,58 @@ class WeightPredictor:
 
                 accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
                 print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
+                               "Fscore": fscore}
+                return result_dict
+    def standard_aggregation(self, test_loader):
+        self.set_mode("test")
+        self.net.eval()
+        if self.threshold is not None:
+            bag_prob, bag_labels = [], []
+            average_set_size = 0
+            coverage = 0
+            with torch.no_grad():
+                for i, (data, target) in enumerate(test_loader):
+                    bag_labels.append(target.item())
+                    data = data.to(self.device)
+                    target = target.to(self.device)
+
+                    test_logits = self.net(data)
+
+                    prob = torch.softmax(test_logits, dim=-1)
+                    bag_prob.append(prob[:, 1].cpu().squeeze().numpy())
+                    score_tensor = self.score(prob)
+                    average_set_size += (score_tensor <= self.threshold).sum().item()
+                    coverage += (
+                            score_tensor[torch.arange(score_tensor.shape[0]), target] <= self.threshold).sum().item()
+
+                coverage = coverage / len(test_loader)
+                average_set_size = average_set_size / len(test_loader)
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                print("Standard Method")
+                print(
+                    f"average set size: {average_set_size}, coverage: {coverage}, accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                print("")
+                result_dict = {"Coverage": coverage, "Average Set Size": average_set_size, "Accuracy": accuracy,
+                               "AUC": auc_value, "Precision": precision, "Recall": recall, "Fscore": fscore}
+                return result_dict
+        else:
+            bag_prob, bag_labels = [], []
+
+            with torch.no_grad():
+                for i, (data, target) in enumerate(test_loader):
+                    bag_labels.append(target.item())
+                    data = data.to(self.device)
+                    target = target.to(self.device)
+
+                    test_logits = self.net(data)
+
+                    bag_prob.append(torch.softmax(test_logits, dim=-1)[:, 1].cpu().squeeze().numpy())
+
+                accuracy, auc_value, precision, recall, fscore = five_scores(bag_labels, bag_prob, )
+                print("Standard Method")
+                print(f"accuracy:{accuracy}, auc:{auc_value}, precision:{precision}, recall:{recall}, fscore:{fscore}")
+                print("")
                 result_dict = {"Accuracy": accuracy, "AUC": auc_value, "Precision": precision, "Recall": recall,
                                "Fscore": fscore}
                 return result_dict
