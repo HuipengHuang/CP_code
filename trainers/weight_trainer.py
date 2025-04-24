@@ -27,6 +27,7 @@ class WeightTrainer(Trainer):
             target_list = []
             for data, target in tqdm(dataloader, desc=f"{epoch+1} / {epochs}"):
                 instance_weight = self.weight(data)
+                print(instance_weight.shape)
                 instance_weight = torch.softmax(instance_weight, dim=-1).squeeze(dim=0)
                 target_list.append(target)
                 instance_prob_list = []
