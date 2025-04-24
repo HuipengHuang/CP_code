@@ -39,6 +39,7 @@ class WeightTrainer(Trainer):
 
                 bag_score = self.predictor.score(batch_instance_prob)
                 weighted_score = (bag_score * instance_weight).sum(dim=0)
+                print(bag_score.shape, instance_weight.shape, weighted_score.shape)
                 weight_score_list.append(weighted_score)
                 if(len(weight_score_list) == 2):
                     batch_score = torch.stack(weight_score_list, dim=0)
